@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faEye, faEyeSlash, faLock } from '@fortawesome/free-solid-svg-icons'
 
-import { useState } from "react";
+import { useState, useActionState } from "react";
 import { DM_Sans } from "next/font/google";
 import LoginAction from "@/auth/login-action";
 
@@ -15,9 +15,10 @@ const dmSans = DM_Sans({
 
 export default function LoginForm() {
   const [passShown, setPassShown] = useState(false);
+const [state, action, pending] = useActionState(LoginAction, undefined)
   return (
    
-      <form action={LoginAction}>
+      <form action={action}>
         <div className={`${dmSans.className} flex flex-col self-center gap-4 p-12`}>
           <div className="relative">
               <FontAwesomeIcon 
@@ -29,9 +30,7 @@ export default function LoginForm() {
                   type="email"
                   placeholder="Email" 
                   name="email"
-                  
-                  className="text-white placeholder-gray-400 p-2 border pl-6 border-gray-500 rounded-md w-full" 
-                  required
+                  className="text-white placeholder-gray-400 p-2 border pl-6 border-gray-500 rounded-md w-full"
               />
             </div>
 
@@ -46,9 +45,7 @@ export default function LoginForm() {
                   type={passShown ? 'text' : 'password'}
                   placeholder="Password" 
                   name="password"
-                  
                   className="text-white placeholder-gray-400 p-2 border pl-6 border-gray-500 rounded-md w-full"
-                  required
               />
             </div>
             <button type="submit" className="text-black p-2 rounded-md cursor-pointer bg-green-300 hover:bg-green-200">Login</button>

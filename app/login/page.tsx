@@ -5,6 +5,7 @@ const fraunces = Fraunces({
 subsets: ["latin"],
   });
 export default function Login(){
+    
     return(
        <div className="flex justify-center items-center bg-[#07090F] h-screen">
             <div className="flex flex-col items-center border border-gray-400 rounded-3xl">

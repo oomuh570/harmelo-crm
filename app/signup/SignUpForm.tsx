@@ -3,7 +3,7 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faLock, faPhone, faUser, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
-import { useActionState, useState } from "react";
+import { useActionState, useState, startTransition } from "react";
 
 import { DM_Sans } from "next/font/google";
 import SignUpAction from "@/auth/signup-action";
@@ -18,11 +18,17 @@ const dmSans = DM_Sans({
 
 export default function SignupForm() {
     const [passShown, setPassShown] = useState(false);
-    const [state, action] = useActionState(SignUpAction, undefined)
-   
+    const [state, action, pending] = useActionState(SignUpAction, undefined)
+    
+     const handleSubmit = (e) => {
+        e.preventDefault();
+        startTransition(() => {
+            action(new FormData(e.target));
+        });
+    };
     return (
         
-        <form action={action}>
+        <form onSubmit={handleSubmit}>
             <div className={`${dmSans.className} flex flex-col self-center gap-4 p-12`}>
                 <div className="relative">
                     <FontAwesomeIcon 
@@ -94,7 +100,7 @@ export default function SignupForm() {
                     className= "text-black p-2 rounded-md bg-green-300 hover:bg-green-200 cursor-pointer"
                     type="submit"                        
                     >
-                        Sign Up
+                        {pending ? 'Submitting...' : 'Sign Up'}
                     </button>
             </div>
         </form>
