@@ -101,7 +101,7 @@ export default function SignupForm() {
                     type="submit"                        
                     >
                         {pending ? 'Submitting...' : 'Sign Up'}
-                    </button>
+                </button>
             </div>
         </form>
        
