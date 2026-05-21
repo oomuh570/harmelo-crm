@@ -23,7 +23,7 @@ export default function LoginForm() {
           />
 
           <input 
-            type="email"
+            
             placeholder="Email" 
             name="email"
             className="text-white placeholder-gray-400 p-2 border pl-6 border-gray-500 rounded-md w-full"
