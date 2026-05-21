@@ -20,10 +20,10 @@ export default function SignupForm() {
     const [passShown, setPassShown] = useState(false);
     const [state, action, pending] = useActionState(SignUpAction, undefined)
     
-     const handleSubmit = (e) => {
+     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         startTransition(() => {
-            action(new FormData(e.target));
+            action(new FormData(e.currentTarget));
         });
     };
     return (
