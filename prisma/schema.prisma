@@ -23,6 +23,9 @@ model User {
   createdAt   DateTime @default(now())
 }
 
+// Contact represents a person or organization Harmelo tracks.
+// Future: Contact will have a one-to-many relationship with Activity
+// (one contact -> many logged interactions). Activity table added in a later task.
 
 model Contact {
   id           String      @id @default(cuid())
