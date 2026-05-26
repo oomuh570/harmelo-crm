@@ -1,6 +1,6 @@
 'use server';
 
-import { createSession } from '@/lib/session';
+import { createSession, deleteSession } from '@/lib/session';
 import { LoginSchema } from './definitions';
 import { redirect } from 'next/navigation';
 
@@ -40,10 +40,16 @@ export default async function LoginAction(state: any, formData: FormData) {
   } catch (error) {
     console.log(error);
     return {
-      message: 'Something went wrong',
+      message: 'Invalid password or email',
     };
   }
 
   await createSession(userId);
   redirect('/dashboard');
+}
+
+
+export async function logout(){
+    await deleteSession();
+    redirect("/login")
 }

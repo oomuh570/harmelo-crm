@@ -1,5 +1,6 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { SignupSchema } from './definitions';
 
 export default async function SignUpAction(state: any, formData: FormData) {
@@ -42,4 +43,7 @@ export default async function SignUpAction(state: any, formData: FormData) {
       errors: { email: ['Something went wrong'] },
     };
   }
+  redirect('/dashboard')
+
+  
 }
