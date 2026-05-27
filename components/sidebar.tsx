@@ -5,7 +5,7 @@ import Link from "next/link"
 
 export default function Sidebar(){
     return(
-        <div className= "border-r border-gray-400 h-screen w-[15%]">
+        <div className= "border-r border-gray-400 h-screen w-[15%] text-white">
             <div className="flex flex-col items-center">
                 <div>Harmelo</div>
                 <Link href='/dashboard'>Dashboard</Link>

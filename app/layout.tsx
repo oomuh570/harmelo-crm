@@ -1,8 +1,18 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Inter } from 'next/font/google';
 import './globals.css';
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
+import { cn } from "@/lib/utils";
+import { DM_Sans } from "next/font/google";
+
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+})
 
 config.autoAddCss = false
 
@@ -27,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={cn("h-full", "antialiased", dmSans.variable)}>
       <body className="min-h-full flex flex-col">
       
         {children}
