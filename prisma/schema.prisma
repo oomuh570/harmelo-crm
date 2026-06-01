@@ -37,9 +37,11 @@ model Contact {
   notes        String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
 
   @@index([type])
   @@index([organization])
+  @@index([deletedAt])
 }
 
 enum ContactType {
