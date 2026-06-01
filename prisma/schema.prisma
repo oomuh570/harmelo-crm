@@ -20,6 +20,7 @@ model User {
   phoneNumber String?
   password    String
   createdAt   DateTime @default(now())
+  activities   Activity[]
 }
 
 // Contact represents a person or organization Harmelo tracks.
@@ -38,6 +39,8 @@ model Contact {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   deletedAt    DateTime?
+  activities   Activity[]
+
 
   @@index([type])
   @@index([organization])
@@ -53,3 +56,37 @@ enum ContactType {
   PARTNER
   OTHER
 }
+
+
+// Activity represents a logged interaction with a contact
+// (call, email, meeting, or freeform note). An activity with
+// a followUpAt set is what powers the follow-up reminders feature.
+model Activity {
+  id           String        @id @default(cuid())
+  type         ActivityType  @default(NOTE)
+  notes        String
+  occurredAt   DateTime      @default(now())
+  followUpAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  contact      Contact       @relation(fields: [contactId], references: [id])
+  contactId    String
+
+  user         User          @relation(fields: [userId], references: [id])
+  userId       String
+
+  @@index([contactId])
+  @@index([userId])
+  @@index([followUpAt])
+  @@index([deletedAt])
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+}
+
