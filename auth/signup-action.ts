@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { createSession } from '@/lib/session';
 import { SignupSchema } from './definitions';
 
 export default async function SignUpAction(state: any, formData: FormData) {
@@ -19,6 +20,8 @@ export default async function SignUpAction(state: any, formData: FormData) {
 
   const { fullName, email, phoneNumber, password } = validationResult.data;
 
+  let userId: string;
+
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/signup`, {
       method: 'POST',
@@ -36,14 +39,14 @@ export default async function SignUpAction(state: any, formData: FormData) {
     }
 
     const data = await res.json();
-    return { success: true, userId: data.id };
+    userId = data.id;
   } catch (error) {
     console.log(error);
     return {
       errors: { email: ['Something went wrong'] },
     };
   }
-  redirect('/dashboard')
 
-  
+  await createSession(userId);
+  redirect('/dashboard');
 }

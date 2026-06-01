@@ -5,7 +5,7 @@ export const SignupSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email' }).trim(),
   phoneNumber: z
     .string()
-    .regex(/^[0-9]{3}-[0-9]{3}-[0-9]{4}$/, { message: 'Must be in the format 123-456-7890' })
+    .regex(/^[0-9]{3}-[0-9]{3}-[0-9]{4}$/, { message: 'Must be a 10-digit phone number' })
     .trim(),
   password: z
     .string()

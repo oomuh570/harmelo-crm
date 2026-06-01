@@ -1,21 +1,28 @@
 import SignupForm from "./SignUpForm";
 import { Fraunces } from "next/font/google";
 import Link from "next/link";
+
 const fraunces = Fraunces({
   subsets: ["latin"],
 });
-export default function SignUp(){
 
-    return(
-        <div className="flex justify-center items-center bg-[#07090F] h-screen">
-            <div className="flex flex-col items-center border border-gray-400 rounded-3xl">
-                <h1 className={`${fraunces.className} text-white text-2xl self-center pt-5 pb-5 `} >Sign Up</h1>
-                <SignupForm/>
-                <div className="flex gap-1 pb-20">
-                    <p className="text-white">Already have an account?</p>
-                    <Link className="text-blue-400 cursor-pointer hover:text-blue-300" href='/login'>Log In</Link>
-                </div>
-            </div>
+export default function SignUp() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#07090F] px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-[#0f1117] px-8 py-10 shadow-xl">
+        <h1 className={`${fraunces.className} text-center text-2xl text-white`}>Sign Up</h1>
+        <p className="mt-1 text-center text-sm text-gray-400">Create your Harmelo account</p>
+        <SignupForm />
+        <div className="flex justify-center gap-1 text-sm">
+          <p className="text-gray-400">Already have an account?</p>
+          <Link
+            className="text-green-400 hover:text-green-300 cursor-pointer"
+            href="/login"
+          >
+            Log In
+          </Link>
         </div>
-    )
+      </div>
+    </div>
+  );
 }

@@ -9,46 +9,50 @@ const dmSans = DM_Sans({
     subsets: ["latin"]
 });
 
+const inputBase =
+  "w-full rounded-md border border-gray-700 bg-[#07090F] py-2 pl-9 text-sm text-white placeholder-gray-500 outline-none transition-colors focus:border-green-400 focus:ring-1 focus:ring-green-400";
+const iconClass = "text-gray-500 absolute left-3 top-1/2 -translate-y-1/2";
+
 export default function LoginForm() {
   const [passShown, setPassShown] = useState(false);
   const [state, action, pending] = useActionState(LoginAction, null)
   return (
-
     <form action={action}>
-      <div className={`${dmSans.className} flex flex-col self-center gap-4 p-12`}>
+      <div className={`${dmSans.className} flex flex-col gap-4 py-6`}>
         <div className="relative">
-          <FontAwesomeIcon 
-            icon={faEnvelope} 
-            className="text-gray-400 absolute top-5 -translate-y-1/2 pl-1"
-          />
-
-          <input 
-            
-            placeholder="Email" 
+          <FontAwesomeIcon icon={faEnvelope} className={iconClass} />
+          <input
+            placeholder="Email"
             name="email"
-            className="text-white placeholder-gray-400 p-2 border pl-6 border-gray-500 rounded-md w-full"
+            className={`${inputBase} pr-3`}
           />
         </div>
-        
+
         <div className="relative">
-          <FontAwesomeIcon 
-            icon={faLock} 
-            className="text-gray-400 absolute top-5 -translate-y-1/2 pl-1"
+          <FontAwesomeIcon icon={faLock} className={iconClass} />
+          <FontAwesomeIcon
+            onClick={() => setPassShown(!passShown)}
+            icon={passShown ? faEye : faEyeSlash}
+            className="text-gray-500 hover:text-gray-300 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
           />
-          {passShown && <FontAwesomeIcon onClick={() => setPassShown(!passShown)} icon={faEye} className=" text-gray-400 absolute right-3 top-5 -translate-y-1/2 cursor-pointer"/>}
-          {!passShown && <FontAwesomeIcon onClick={() => setPassShown(!passShown)} icon={faEyeSlash} className=" text-gray-400 absolute right-3 top-5 -translate-y-1/2 cursor-pointer"/>}
-          <input 
+          <input
             type={passShown ? 'text' : 'password'}
-            placeholder="Password" 
+            placeholder="Password"
             name="password"
-            className="text-white placeholder-gray-400 p-2 border pl-6 border-gray-500 rounded-md w-full"
+            className={`${inputBase} pr-9`}
           />
-          
         </div>
-        {state?.message && (<p className='text-red-500'>{state.message}</p>)}
-        <button type="submit" className="text-black p-2 rounded-md cursor-pointer bg-green-300 hover:bg-green-200">{pending ? 'Logging In...' : 'Login'}</button>
+
+        {state?.message && <p className="text-sm text-red-400">{state.message}</p>}
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="mt-2 w-full rounded-md bg-green-400 py-2 text-sm font-medium text-black hover:bg-green-500 cursor-pointer disabled:opacity-50"
+        >
+          {pending ? 'Logging In...' : 'Login'}
+        </button>
       </div>
     </form>
-   
   );
 }
