@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { Fraunces } from 'next/font/google'
 import { X } from 'lucide-react'
 import type { Contact } from './columns'
+import { formatPhone } from './contact'
 
 const fraunces = Fraunces({ subsets: ['latin'] })
 
@@ -33,11 +35,16 @@ export default function EditContactForm({
   contact: Contact
   onClose: () => void
 }) {
+  const router = useRouter()
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   // fields are prepopulated from the contact being edited
   const [form, setForm] = useState({
     name: contact.name,
     email: contact.email,
-    phone: contact.phoneNumber,
+    // assume a 10-digit number and show it dashed when the form opens
+    phone: formatPhone(contact.phone),
     organization: contact.organization,
     jobTitle: contact.jobTitle,
     type: contact.type,
@@ -56,11 +63,31 @@ export default function EditContactForm({
     return (e: FormFieldEvent) => setForm((f) => ({ ...f, [field]: e.target.value }))
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // TODO: wire up the update server action (PUT) to persist `form` for contact.id,
-    // then router.refresh() the table. Frontend-only for now.
-    onClose()
+    setPending(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/contacts/${contact.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+
+      if (res.ok) {
+        router.refresh()
+        onClose()
+        return
+      }
+
+      const data = await res.json().catch(() => null)
+      setError(data?.error ?? 'Failed to update contact')
+    } catch {
+      setError('Failed to update contact')
+    } finally {
+      setPending(false)
+    }
   }
 
   return createPortal(
@@ -102,7 +129,9 @@ export default function EditContactForm({
               className={inputClass}
               type="tel"
               value={form.phone}
-              onChange={update('phone')}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, phone: formatPhone(e.target.value) }))
+              }
             />
           </div>
 
@@ -149,6 +178,8 @@ export default function EditContactForm({
             />
           </div>
 
+          {error && <p className="text-xs text-red-400">{error}</p>}
+
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
@@ -159,9 +190,10 @@ export default function EditContactForm({
             </button>
             <button
               type="submit"
-              className="rounded-md bg-green-400 px-4 py-2 text-sm font-medium text-black hover:bg-green-500 cursor-pointer"
+              disabled={pending}
+              className="rounded-md bg-green-400 px-4 py-2 text-sm font-medium text-black hover:bg-green-500 cursor-pointer disabled:opacity-50"
             >
-              Save Changes
+              {pending ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </form>

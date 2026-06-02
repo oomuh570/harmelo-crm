@@ -1,29 +1,33 @@
 import Sidebar from "@/components/sidebar";
-import { columns, Contact } from "./columns"
-import { DataTable } from "./data-table"
+import { mapContact } from "./contact"
+import ContactsTable from "./contacts-table"
 import { Fraunces } from "next/font/google";
 import AddContactForm from "./add-contact-form"
 import { prisma } from "@/lib/prisma"
 
 const fraunces = Fraunces({ subsets: ["latin"] });
 
-async function getData(): Promise<Contact[]> {
-  const contacts = await prisma.contact.findMany({ orderBy: { createdAt: 'desc' } })
-  return contacts.map(c => ({
-    id: c.id,
-    name: c.name,
-    email: c.email ?? '',
-    phoneNumber: c.phone ?? '',
-    organization: c.organization ?? '',
-    jobTitle: c.jobTitle ?? '',
-    type: c.type,
-    notes: c.notes ?? '',
-    createdAt: c.createdAt,
-  }))
+const PAGE_SIZE = 20
+
+// Server-render the first page; ContactsTable fetches further pages/searches
+// from GET /api/contacts on the client.
+async function getData() {
+  const [contacts, totalCount] = await Promise.all([
+    prisma.contact.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: PAGE_SIZE,
+    }),
+    prisma.contact.count({ where: { deletedAt: null } }),
+  ])
+  return {
+    contacts: contacts.map(mapContact),
+    totalPages: Math.max(1, Math.ceil(totalCount / PAGE_SIZE)),
+  }
 }
 
 export default async function ContactsPage() {
-  const data = await getData()
+  const { contacts, totalPages } = await getData()
   return (
     <div className="w-screen h-screen bg-[#07090F]">
       <div className="flex">
@@ -32,7 +36,7 @@ export default async function ContactsPage() {
           <h1 className={`${fraunces.className} text-3xl mt-5 text-white`}>Contacts</h1>
           <div className="w-[50%] mt-20">
             <AddContactForm />
-            <DataTable columns={columns} data={data} />
+            <ContactsTable initialData={contacts} initialTotalPages={totalPages} />
           </div>
         </div>
       </div>

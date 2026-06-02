@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState, startTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Fraunces } from 'next/font/google'
 import {
@@ -10,7 +10,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { addContactAction } from './add-contact-action'
+import { formatPhone } from './contact'
 
 const fraunces = Fraunces({ subsets: ['latin'] })
 
@@ -30,19 +30,39 @@ const CONTACT_TYPES = [
 
 export default function AddContactForm() {
   const [open, setOpen] = useState(false)
-  const [state, action, pending] = useActionState(addContactAction, undefined)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [phone, setPhone] = useState('')
   const router = useRouter()
 
-  useEffect(() => {
-    if (state?.success) {
-      setOpen(false)
-      router.refresh()
-    }
-  }, [state, router])
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    startTransition(() => action(new FormData(e.currentTarget)))
+    setPending(true)
+    setError(null)
+
+    const formData = new FormData(e.currentTarget)
+
+    try {
+      const res = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(formData)),
+      })
+
+      if (res.ok) {
+        setOpen(false)
+        setPhone('')
+        router.refresh()
+        return
+      }
+
+      const data = await res.json().catch(() => null)
+      setError(data?.error ?? 'Failed to save contact')
+    } catch {
+      setError('Failed to save contact')
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -63,9 +83,6 @@ export default function AddContactForm() {
                 Name <span className="text-red-400">*</span>
               </label>
               <input className={inputClass} name="name" placeholder="Jane Doe" required />
-              {state?.errors?.name && (
-                <p className="text-xs text-red-400">{state.errors.name[0]}</p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -79,9 +96,6 @@ export default function AddContactForm() {
                 placeholder="jane@example.com"
                 required
               />
-              {state?.errors?.email && (
-                <p className="text-xs text-red-400">{state.errors.email[0]}</p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -90,7 +104,9 @@ export default function AddContactForm() {
                 className={inputClass}
                 name="phone"
                 type="tel"
-                placeholder="+1 (555) 000-0000"
+                placeholder="123-456-7890"
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
               />
             </div>
 
@@ -128,6 +144,8 @@ export default function AddContactForm() {
                 placeholder="Anything worth remembering…"
               />
             </div>
+
+            {error && <p className="text-xs text-red-400">{error}</p>}
 
             <button
               type="submit"

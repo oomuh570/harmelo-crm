@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Mail, Phone, Building2, Briefcase, StickyNote, Calendar, X } from 'lucide-react'
 import type { Contact } from './columns'
+import { mapContact } from './contact'
 
 function formatType(type: string) {
   if (type === 'US') return 'US'
@@ -57,6 +58,10 @@ export default function ContactPopup({
   contact: Contact
   onClose: () => void
 }) {
+  // start from the row data (instant render), then refresh from the server
+  const [data, setData] = useState<Contact>(contact)
+  const [loading, setLoading] = useState(false)
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -65,6 +70,28 @@ export default function ContactPopup({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // fetch the latest contact by id when the popup opens
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+
+    fetch(`/api/contacts/${contact.id}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('request failed'))))
+      .then((raw) => {
+        if (!cancelled) setData(mapContact(raw))
+      })
+      .catch(() => {
+        // keep showing the row data we already have on error
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [contact.id])
+
   return createPortal(
     <>
       <div className="fixed inset-0 bg-black/60 z-50" onClick={onClose} />
@@ -72,13 +99,14 @@ export default function ContactPopup({
         {/* Header */}
         <div className="flex items-start gap-4 p-6 border-b border-gray-800">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-400/20 text-green-300 font-semibold">
-            {initials(contact.name) || '?'}
+            {initials(data.name) || '?'}
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-white truncate">{contact.name}</h2>
+            <h2 className="text-lg font-semibold text-white truncate">{data.name}</h2>
             <span className="mt-1 inline-block rounded-full bg-gray-700/60 px-2.5 py-0.5 text-xs text-gray-300">
-              {formatType(contact.type)}
+              {formatType(data.type)}
             </span>
+            {loading && <span className="ml-2 text-xs text-gray-600">Refreshing…</span>}
           </div>
           <button
             onClick={onClose}
@@ -91,23 +119,23 @@ export default function ContactPopup({
 
         {/* Body */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
-          <Field icon={<Mail className="h-4 w-4" />} label="Email" value={contact.email} />
-          <Field icon={<Phone className="h-4 w-4" />} label="Phone" value={contact.phoneNumber} />
+          <Field icon={<Mail className="h-4 w-4" />} label="Email" value={data.email} />
+          <Field icon={<Phone className="h-4 w-4" />} label="Phone" value={data.phone} />
           <Field
             icon={<Building2 className="h-4 w-4" />}
             label="Organization"
-            value={contact.organization}
+            value={data.organization}
           />
           <Field
             icon={<Briefcase className="h-4 w-4" />}
             label="Job Title"
-            value={contact.jobTitle}
+            value={data.jobTitle}
           />
           <div className="sm:col-span-2">
             <Field
               icon={<StickyNote className="h-4 w-4" />}
               label="Notes"
-              value={contact.notes}
+              value={data.notes}
             />
           </div>
         </div>
@@ -115,7 +143,7 @@ export default function ContactPopup({
         {/* Footer */}
         <div className="flex items-center gap-2 px-6 py-4 border-t border-gray-800 text-xs text-gray-500">
           <Calendar className="h-3.5 w-3.5" />
-          Added {formatDate(contact.createdAt)}
+          Added {formatDate(data.createdAt)}
         </div>
       </div>
     </>,

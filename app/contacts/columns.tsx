@@ -13,21 +13,12 @@ import {
 import ContactPopup from "@/app/contacts/contact-popup"
 import EditContactForm from "@/app/contacts/edit-contact-form"
 import ConfirmDialog from "@/components/confirm-dialog"
-import { deleteContactAction } from "@/app/contacts/delete-contact-action"
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import type { Contact } from "./contact"
 
-export type Contact = {
-  id: string
-  name: string
-  phoneNumber: string
-  email: string
-  organization: string
-  jobTitle: string
-  type: string
-  notes: string
-  createdAt: Date
-}
+// re-exported so existing importers (`from './columns'`) keep working
+export type { Contact }
 
 function ContactAction({ contact }: { contact: Contact }) {
   const [modal, setModal] = useState(false)
@@ -38,13 +29,18 @@ function ContactAction({ contact }: { contact: Contact }) {
 
   function handleDelete() {
     startTransition(async () => {
-      await deleteContactAction(contact.id)
-      setConfirmDelete(false)
-      router.refresh()
+      // soft delete: the endpoint sets deletedAt; the row is hidden from the
+      // table (getData filters deletedAt: null) but remains recoverable in the DB
+      const res = await fetch(`/api/contacts/${contact.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setConfirmDelete(false)
+        router.refresh()
+      }
     })
   }
 
   return (
+    //triple dots for each row
     <>
       <DropdownMenu>
         <DropdownMenuTrigger className="h-8 w-8 p-0 flex items-center justify-center rounded-md hover:bg-accent cursor-pointer">
@@ -64,7 +60,7 @@ function ContactAction({ contact }: { contact: Contact }) {
       {editModal && <EditContactForm contact={contact} onClose={() => setEditModal(false)} />}
       {confirmDelete && (
         <ConfirmDialog
-          message={`Are you sure you want to delete "${contact.name}"? This cannot be undone.`}
+          message={`Are you sure you want to delete "${contact.name}"? This will remove them from your contacts.`}
           onConfirm={handleDelete}
           onCancel={() => setConfirmDelete(false)}
           loading={isPending}
@@ -78,6 +74,7 @@ export const columns: ColumnDef<Contact>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (
+      //sorting button
       <button
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="flex items-center gap-1 hover:text-gray-300 cursor-pointer"
@@ -92,7 +89,7 @@ export const columns: ColumnDef<Contact>[] = [
     header: "Email",
   },
   {
-    accessorKey: "phoneNumber",
+    accessorKey: "phone",
     header: "Phone Number",
   },
 

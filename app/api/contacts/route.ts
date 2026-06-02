@@ -1,25 +1,42 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/lib/generated/prisma/client';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const search = searchParams.get('search')?.trim() || '';
 
     const safePage = page > 0 ? page : 1;
     const safeLimit = limit > 0 && limit <= 100 ? limit : 20;
 
     const skip = (safePage - 1) * safeLimit;
 
+    // Build the filter: always exclude soft-deleted; optionally match the search
+    // term against name / email / organization (case-insensitive)
+    const where: Prisma.ContactWhereInput = {
+      deletedAt: null,
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { organization: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
     const [contacts, totalCount] = await Promise.all([
       prisma.contact.findMany({
-        where: { deletedAt: null },
+        where,
         skip,
         take: safeLimit,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.contact.count({ where: { deletedAt: null } }),
+      prisma.contact.count({ where }),
     ]);
 
     return NextResponse.json({
