@@ -48,5 +48,5 @@ export default async function SignUpAction(state: any, formData: FormData) {
   }
 
   await createSession(userId);
-  redirect('/dashboard');
+  redirect('/');
 }

@@ -29,12 +29,12 @@ async function getData() {
 export default async function ContactsPage() {
   const { contacts, totalPages } = await getData()
   return (
-    <div className="w-screen h-screen bg-[#07090F]">
+    <div className="min-h-screen bg-[#07090F]">
       <div className="flex">
         <Sidebar />
-        <div className="h-screen flex flex-col items-center w-full">
-          <h1 className={`${fraunces.className} text-3xl mt-5 text-white`}>Contacts</h1>
-          <div className="w-[50%] mt-20">
+        <div className="flex-1 min-w-0 min-h-screen flex flex-col items-center">
+          <h1 className={`${fraunces.className} text-2xl md:text-3xl text-white pt-16 md:pt-5`}>Contacts</h1>
+          <div className="w-full max-w-3xl px-4 mt-10 md:mt-20">
             <AddContactForm />
             <ContactsTable initialData={contacts} initialTotalPages={totalPages} />
           </div>

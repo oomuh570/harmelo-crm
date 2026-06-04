@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server"
 import { decrypt } from "./lib/session";
 
-const privateRoutes = ["/dashboard", "/", "/contacts"]
+const privateRoutes = ["/", "/contacts"]
 const publicRoutes = ["/login", "/signup"]
 
 export default async function proxy(req : NextRequest){
@@ -18,7 +18,7 @@ export default async function proxy(req : NextRequest){
     }
 
     if(isPublicRoute && session?.userId){
-        return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
+        return NextResponse.redirect(new URL("/", req.nextUrl))
     }
 
     return NextResponse.next();

@@ -45,7 +45,7 @@ export default async function LoginAction(state: any, formData: FormData) {
   }
 
   await createSession(userId);
-  redirect('/dashboard');
+  redirect('/');
 }
 
 

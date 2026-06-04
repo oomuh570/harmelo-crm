@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -74,6 +75,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       data,
     });
 
+    revalidatePath('/');
+    revalidatePath('/contacts');
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Update contact error:', error);
@@ -102,12 +105,16 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     if (permanent) {
       await prisma.contact.delete({ where: { id } });
+      revalidatePath('/');
+      revalidatePath('/contacts');
       return NextResponse.json({ success: true, permanent: true });
     } else {
       await prisma.contact.update({
         where: { id },
         data: { deletedAt: new Date() },
       });
+      revalidatePath('/');
+      revalidatePath('/contacts');
       return NextResponse.json({ success: true, permanent: false });
     }
   } catch (error) {

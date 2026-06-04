@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/lib/generated/prisma/client';
 
@@ -89,6 +90,8 @@ export async function POST(request: Request) {
       },
     });
 
+    revalidatePath('/');
+    revalidatePath('/contacts');
     return NextResponse.json(contact, { status: 201 });
   } catch (error) {
     console.error('Create contact error:', error);
