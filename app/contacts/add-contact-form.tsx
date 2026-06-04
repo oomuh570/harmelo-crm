@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { formatPhone } from './contact'
+import RichTextEditor from '@/components/rich-text-editor'
 
 const fraunces = Fraunces({ subsets: ['latin'] })
 
@@ -33,6 +34,7 @@ export default function AddContactForm() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
+  const [notes, setNotes] = useState('')
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -52,6 +54,7 @@ export default function AddContactForm() {
       if (res.ok) {
         setOpen(false)
         setPhone('')
+        setNotes('')
         router.refresh()
         return
       }
@@ -125,6 +128,15 @@ export default function AddContactForm() {
             </div>
 
             <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>Address</label>
+              <input
+                className={inputClass}
+                name="address"
+                placeholder="123 Main St, Ottawa, ON"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
               <label className={labelClass}>Type</label>
               <select className={`${inputClass} cursor-pointer`} name="type" defaultValue="OTHER">
                 {CONTACT_TYPES.map((t) => (
@@ -137,12 +149,8 @@ export default function AddContactForm() {
 
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}>Notes</label>
-              <textarea
-                className={`${inputClass} resize-none`}
-                name="notes"
-                rows={3}
-                placeholder="Anything worth remembering…"
-              />
+              <input type="hidden" name="notes" value={notes} />
+              <RichTextEditor value={notes} onChange={setNotes} />
             </div>
 
             {error && <p className="text-xs text-red-400">{error}</p>}

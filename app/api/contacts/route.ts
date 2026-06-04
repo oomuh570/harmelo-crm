@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, phone, organization, jobTitle, type, notes } = body;
+    const { name, email, phone, organization, jobTitle, type, address, notes } = body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -84,6 +84,7 @@ export async function POST(request: Request) {
         organization: organization || null,
         jobTitle: jobTitle || null,
         type: type || 'OTHER',
+        address: address || null,
         notes: notes || null,
       },
     });

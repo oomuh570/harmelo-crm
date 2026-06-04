@@ -37,6 +37,9 @@ beforeEach(() => {
   Element.prototype.hasPointerCapture ||= () => false
   Element.prototype.setPointerCapture ||= () => {}
   Element.prototype.releasePointerCapture ||= () => {}
+  // jsdom lacks elementFromPoint, which TipTap's Placeholder extension calls via prosemirror
+  document.elementFromPoint ||= () => null
+  document.elementsFromPoint ||= () => []
 })
 
 // RTL auto-cleanup isn't active in this config; unmount between tests
@@ -50,6 +53,7 @@ const contact: Contact = {
   organization: 'Analytical Engines',
   jobTitle: 'Mathematician',
   type: 'INVESTOR',
+  address: '10 Ockham Rd, London',
   notes: 'First computer programmer',
   createdAt: new Date('2024-01-15T00:00:00Z'),
 }
@@ -64,7 +68,9 @@ describe('Edit contact form', () => {
     expect(screen.getByDisplayValue('403-330-2322')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Analytical Engines')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Mathematician')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('First computer programmer')).toBeInTheDocument()
+    // Notes is now a rich-text editor (contenteditable), not a textarea —
+    // its content shows up as visible text rather than a display value.
+    expect(screen.getByText('First computer programmer')).toBeInTheDocument()
     // the type <select> is preselected to the contact's category
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('INVESTOR')
   })

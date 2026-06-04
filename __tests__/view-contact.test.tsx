@@ -50,6 +50,7 @@ const contact: Contact = {
   organization: 'Analytical Engines',
   jobTitle: 'Mathematician',
   type: 'INVESTOR',
+  address: '10 Ockham Rd, London',
   notes: 'First computer programmer',
   createdAt: new Date('2024-01-15T00:00:00Z'),
 }

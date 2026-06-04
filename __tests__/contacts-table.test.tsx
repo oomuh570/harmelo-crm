@@ -49,6 +49,7 @@ const initialData: Contact[] = [
     organization: 'Analytical Engines',
     jobTitle: 'Mathematician',
     type: 'INVESTOR',
+    address: '',
     notes: '',
     createdAt: new Date('2024-01-15T00:00:00Z'),
   },

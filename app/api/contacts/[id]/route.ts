@@ -33,7 +33,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const body = await request.json();
-    const { name, email, phone, organization, jobTitle, type, notes } = body;
+    const { name, email, phone, organization, jobTitle, type, address, notes } = body;
 
     if (name !== undefined && (typeof name !== 'string' || name.trim().length === 0)) {
       return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
@@ -66,6 +66,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (organization !== undefined) data.organization = organization || null;
     if (jobTitle !== undefined) data.jobTitle = jobTitle || null;
     if (type !== undefined) data.type = type;
+    if (address !== undefined) data.address = address || null;
     if (notes !== undefined) data.notes = notes || null;
 
     const updated = await prisma.contact.update({

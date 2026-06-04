@@ -10,6 +10,7 @@ export type Contact = {
   organization: string
   jobTitle: string
   type: string
+  address: string
   notes: string
   createdAt: Date
 }
@@ -24,6 +25,7 @@ export type RawContact = {
   organization: string | null
   jobTitle: string | null
   type: string
+  address: string | null
   notes: string | null
   createdAt: string | Date
 }
@@ -47,6 +49,7 @@ export function mapContact(c: RawContact): Contact {
     organization: c.organization ?? '',
     jobTitle: c.jobTitle ?? '',
     type: c.type,
+    address: c.address ?? '',
     notes: c.notes ?? '',
     createdAt: new Date(c.createdAt),
   }

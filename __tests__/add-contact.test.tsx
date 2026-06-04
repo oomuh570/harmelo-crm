@@ -38,6 +38,9 @@ beforeEach(() => {
   Element.prototype.hasPointerCapture ||= () => false
   Element.prototype.setPointerCapture ||= () => {}
   Element.prototype.releasePointerCapture ||= () => {}
+  // jsdom lacks elementFromPoint, which TipTap's Placeholder extension calls via prosemirror
+  document.elementFromPoint ||= () => null
+  document.elementsFromPoint ||= () => []
 
   refresh.mockClear()
 })

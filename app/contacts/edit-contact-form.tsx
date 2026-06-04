@@ -7,6 +7,7 @@ import { Fraunces } from 'next/font/google'
 import { X } from 'lucide-react'
 import type { Contact } from './columns'
 import { formatPhone } from './contact'
+import RichTextEditor from '@/components/rich-text-editor'
 
 const fraunces = Fraunces({ subsets: ['latin'] })
 
@@ -48,6 +49,7 @@ export default function EditContactForm({
     organization: contact.organization,
     jobTitle: contact.jobTitle,
     type: contact.type,
+    address: contact.address,
     notes: contact.notes,
   })
 
@@ -154,6 +156,15 @@ export default function EditContactForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
+            <label className={labelClass}>Address</label>
+            <input
+              className={inputClass}
+              value={form.address}
+              onChange={update('address')}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
             <label className={labelClass}>Type</label>
             <select
               className={`${inputClass} cursor-pointer`}
@@ -170,11 +181,9 @@ export default function EditContactForm({
 
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}>Notes</label>
-            <textarea
-              className={`${inputClass} resize-none`}
-              rows={3}
+            <RichTextEditor
               value={form.notes}
-              onChange={update('notes')}
+              onChange={(html) => setForm((f) => ({ ...f, notes: html }))}
             />
           </div>
 

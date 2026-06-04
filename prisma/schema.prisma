@@ -35,6 +35,7 @@ model Contact {
   organization String?
   jobTitle     String?
   type         ContactType @default(OTHER)
+  address      String?
   notes        String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
