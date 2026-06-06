@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/session';
 
@@ -140,6 +141,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       },
     });
 
+    revalidatePath('/');
     return NextResponse.json(activity, { status: 201 });
   } catch (error) {
     console.error('Create activity error:', error);

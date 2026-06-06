@@ -5,6 +5,9 @@ import Link from "next/link";
 import { mapContact } from "@/app/contacts/contact";
 import RecentContactsList from "@/app/_dashboard/recent-contacts-list";
 import FollowUpsList, { type FollowUp } from "@/app/_dashboard/follow-ups-list";
+import ContactsByCategory, {
+  type CategoryCount,
+} from "@/app/_dashboard/contacts-by-category";
 
 const fraunces = Fraunces({ subsets: ["latin"] });
 
@@ -27,6 +30,7 @@ async function getThisWeekFollowUps(): Promise<FollowUp[]> {
     where: {
       deletedAt: null,
       followUpAt: { not: null, lte: endOfWeek },
+      contact: { deletedAt: null },
     },
     orderBy: { followUpAt: "asc" },
     take: 6,
@@ -42,18 +46,73 @@ async function getThisWeekFollowUps(): Promise<FollowUp[]> {
   }));
 }
 
-const stats = [
-  { label: "Open follow-ups", value: "—" },
-  { label: "Contacts", value: "—" },
-  { label: "Activities this week", value: "—" },
-  { label: "Overdue", value: "—" },
-];
+async function getContactsByCategory(): Promise<CategoryCount[]> {
+  const rows = await prisma.contact.groupBy({
+    by: ["type"],
+    where: { deletedAt: null },
+    _count: { _all: true },
+  });
+  return rows
+    .map((r) => ({ type: r.type as string, count: r._count._all }))
+    .sort((a, b) => b.count - a.count);
+}
+
+async function getStats() {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfWeek = new Date(startOfToday);
+  // ISO week: Mon = 0 days back, Sun = 6 days back
+  const daysSinceMonday = (startOfWeek.getDay() + 6) % 7;
+  startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
+
+  const [openFollowUps, totalContacts, activitiesThisWeek, overdue] =
+    await Promise.all([
+      prisma.activity.count({
+        where: {
+          followUpAt: { not: null },
+          deletedAt: null,
+          contact: { deletedAt: null },
+        },
+      }),
+      prisma.contact.count({ where: { deletedAt: null } }),
+      prisma.activity.count({
+        where: {
+          occurredAt: { gte: startOfWeek },
+          deletedAt: null,
+          contact: { deletedAt: null },
+        },
+      }),
+      prisma.activity.count({
+        where: {
+          followUpAt: { lt: startOfToday },
+          deletedAt: null,
+          contact: { deletedAt: null },
+        },
+      }),
+    ]);
+
+  return { openFollowUps, totalContacts, activitiesThisWeek, overdue };
+}
 
 export default async function Home() {
-  const [recentContacts, followUps] = await Promise.all([
-    getRecentContacts(),
-    getThisWeekFollowUps(),
-  ]);
+  const [recentContacts, followUps, stats, contactsByCategory] =
+    await Promise.all([
+      getRecentContacts(),
+      getThisWeekFollowUps(),
+      getStats(),
+      getContactsByCategory(),
+    ]);
+
+  const cards = [
+    { label: "Open follow-ups", value: stats.openFollowUps },
+    { label: "Contacts", value: stats.totalContacts },
+    { label: "Activities this week", value: stats.activitiesThisWeek },
+    {
+      label: "Overdue",
+      value: stats.overdue,
+      tone: stats.overdue > 0 ? ("alert" as const) : undefined,
+    },
+  ];
   return (
     <div className="min-h-screen bg-[#07090F]">
       <div className="flex">
@@ -65,15 +124,27 @@ export default async function Home() {
             </h1>
 
             <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-              {stats.map((s) => (
+              {cards.map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-lg border border-gray-700 bg-[#0f1117] p-4"
+                  className={
+                    "rounded-lg border bg-[#0f1117] p-4 " +
+                    (s.tone === "alert"
+                      ? "border-red-500/40"
+                      : "border-gray-700")
+                  }
                 >
                   <div className="text-xs uppercase tracking-wide text-gray-400">
                     {s.label}
                   </div>
-                  <div className="mt-2 text-2xl text-white">{s.value}</div>
+                  <div
+                    className={
+                      "mt-2 text-2xl " +
+                      (s.tone === "alert" ? "text-red-300" : "text-white")
+                    }
+                  >
+                    {s.value}
+                  </div>
                 </div>
               ))}
             </section>
@@ -87,9 +158,14 @@ export default async function Home() {
               </Widget>
             </section>
 
-            <Widget title="Recent activity">
-              <PlaceholderRows count={5} />
-            </Widget>
+            <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+              <Widget title="Recent activity" className="lg:col-span-3">
+                <PlaceholderRows count={5} />
+              </Widget>
+              <Widget title="Contacts by category" className="lg:col-span-2">
+                <ContactsByCategory counts={contactsByCategory} />
+              </Widget>
+            </section>
           </div>
         </div>
       </div>

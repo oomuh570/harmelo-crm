@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/session';
 
@@ -36,12 +37,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     if (permanent) {
       await prisma.activity.delete({ where: { id } });
+      revalidatePath('/');
       return NextResponse.json({ success: true, permanent: true });
     } else {
       await prisma.activity.update({
         where: { id },
         data: { deletedAt: new Date() },
       });
+      revalidatePath('/');
       return NextResponse.json({ success: true, permanent: false });
     }
   } catch (error) {

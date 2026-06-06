@@ -34,8 +34,8 @@ function dueLabel(followUpAt: Date) {
   if (diffDays < 0) return { text: 'Overdue', tone: 'overdue' as const }
   if (diffDays === 0) return { text: 'Today', tone: 'today' as const }
   if (diffDays === 1) return { text: 'Tomorrow', tone: 'normal' as const }
-  const weekday = followUpAt.toLocaleDateString(undefined, { weekday: 'short' })
-  const time = followUpAt.toLocaleTimeString(undefined, {
+  const weekday = followUpAt.toLocaleDateString('en-US', { weekday: 'short' })
+  const time = followUpAt.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: followUpAt.getMinutes() === 0 ? undefined : '2-digit',
   })
@@ -43,8 +43,17 @@ function dueLabel(followUpAt: Date) {
 }
 
 function firstLine(s: string) {
-  const line = s.split(/\r?\n/)[0]
-  return line.length > 80 ? line.slice(0, 77) + '…' : line
+  const plain = s
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+  const line = plain.split(/\r?\n/).find((l) => l.trim()) ?? ''
+  const trimmed = line.trim()
+  return trimmed.length > 80 ? trimmed.slice(0, 77) + '…' : trimmed
 }
 
 export default function FollowUpsList({ followUps }: { followUps: FollowUp[] }) {

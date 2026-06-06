@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import {
   Mail,
   Phone,
@@ -78,6 +79,37 @@ const activityPlaceholders: Record<ActivityType, string> = {
   EMAIL: 'What was sent or received?',
   MEETING: 'What came out of the meeting?',
   NOTE: 'Anything worth remembering…',
+}
+
+type FollowUpMode = 'none' | 'tomorrow' | 'three_days' | 'next_week' | 'custom'
+
+function computePreset(mode: Exclude<FollowUpMode, 'none' | 'custom'>): Date {
+  const d = new Date()
+  d.setHours(9, 0, 0, 0)
+  if (mode === 'tomorrow') d.setDate(d.getDate() + 1)
+  else if (mode === 'three_days') d.setDate(d.getDate() + 3)
+  else if (mode === 'next_week') {
+    // Next Monday
+    const day = d.getDay() // 0=Sun..6=Sat
+    const daysUntilMonday = ((1 - day + 7) % 7) || 7
+    d.setDate(d.getDate() + daysUntilMonday)
+  }
+  return d
+}
+
+function toDatetimeLocalValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function formatFollowUpPreview(d: Date): string {
+  return d.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: d.getMinutes() === 0 ? undefined : '2-digit',
+  })
 }
 
 function Field({
@@ -255,6 +287,7 @@ export default function ContactPopup({
   contact: Contact
   onClose: () => void
 }) {
+  const router = useRouter()
   // start from the row data (instant render), then refresh from the server
   const [data, setData] = useState<Contact>(contact)
   const [loading, setLoading] = useState(false)
@@ -266,6 +299,9 @@ export default function ContactPopup({
   const [logNotes, setLogNotes] = useState('')
   const [logSubmitting, setLogSubmitting] = useState(false)
   const [logError, setLogError] = useState<string | null>(null)
+  const [logFollowUpMode, setLogFollowUpMode] = useState<FollowUpMode>('none')
+  const [logFollowUpAt, setLogFollowUpAt] = useState<Date | null>(null)
+  const [logCustomInput, setLogCustomInput] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletingActivity, setDeletingActivity] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -302,6 +338,41 @@ export default function ContactPopup({
     setLogNotes('')
     setLogType('NOTE')
     setLogError(null)
+    setLogFollowUpMode('none')
+    setLogFollowUpAt(null)
+    setLogCustomInput('')
+  }
+
+  function selectFollowUpPreset(mode: Exclude<FollowUpMode, 'none' | 'custom'>) {
+    if (logFollowUpMode === mode) {
+      setLogFollowUpMode('none')
+      setLogFollowUpAt(null)
+      return
+    }
+    setLogFollowUpMode(mode)
+    setLogFollowUpAt(computePreset(mode))
+    setLogCustomInput('')
+  }
+
+  function selectCustomFollowUp() {
+    if (logFollowUpMode === 'custom') {
+      setLogFollowUpMode('none')
+      setLogFollowUpAt(null)
+      setLogCustomInput('')
+      return
+    }
+    setLogFollowUpMode('custom')
+    setLogFollowUpAt(null)
+  }
+
+  function onCustomInputChange(value: string) {
+    setLogCustomInput(value)
+    if (!value) {
+      setLogFollowUpAt(null)
+      return
+    }
+    const d = new Date(value)
+    setLogFollowUpAt(isNaN(d.getTime()) ? null : d)
   }
 
   async function handleDeleteActivity() {
@@ -340,7 +411,11 @@ export default function ContactPopup({
       const res = await fetch(`/api/contacts/${contact.id}/activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: logType, notes: trimmed }),
+        body: JSON.stringify({
+          type: logType,
+          notes: trimmed,
+          followUpAt: logFollowUpAt ? logFollowUpAt.toISOString() : null,
+        }),
       })
 
       if (!res.ok) {
@@ -353,6 +428,8 @@ export default function ContactPopup({
       // prepend the new activity, cap the list at 5 to match the initial fetch
       setActivities((prev) => [created, ...prev].slice(0, 5))
       resetLogForm()
+      // refresh server components so the dashboard widgets pick up the new activity
+      router.refresh()
     } catch {
       setLogError('Failed to save activity')
     } finally {
@@ -476,7 +553,7 @@ export default function ContactPopup({
         <div className="border-t border-gray-800 p-6">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-gray-500">
-              Recent Activity
+              Activity
             </p>
             {!logOpen && (
               <button
@@ -521,6 +598,64 @@ export default function ContactPopup({
                   placeholder={activityPlaceholders[logType]}
                   disabled={logSubmitting}
                 />
+              </div>
+
+              <div className="mt-3">
+                <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">
+                  Follow up <span className="normal-case text-gray-600">(optional)</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      { mode: 'tomorrow', label: 'Tomorrow' },
+                      { mode: 'three_days', label: '3 days' },
+                      { mode: 'next_week', label: 'Next week' },
+                    ] as const
+                  ).map((p) => {
+                    const selected = logFollowUpMode === p.mode
+                    return (
+                      <button
+                        key={p.mode}
+                        type="button"
+                        onClick={() => selectFollowUpPreset(p.mode)}
+                        disabled={logSubmitting}
+                        className={`rounded-md border px-2.5 py-1 text-xs cursor-pointer transition-colors disabled:opacity-50 ${
+                          selected
+                            ? 'border-green-400 bg-green-400/10 text-green-200'
+                            : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    )
+                  })}
+                  <button
+                    type="button"
+                    onClick={selectCustomFollowUp}
+                    disabled={logSubmitting}
+                    className={`rounded-md border px-2.5 py-1 text-xs cursor-pointer transition-colors disabled:opacity-50 ${
+                      logFollowUpMode === 'custom'
+                        ? 'border-green-400 bg-green-400/10 text-green-200'
+                        : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
+                    }`}
+                  >
+                    Custom…
+                  </button>
+                </div>
+                {logFollowUpMode === 'custom' && (
+                  <input
+                    type="datetime-local"
+                    value={logCustomInput}
+                    onChange={(e) => onCustomInputChange(e.target.value)}
+                    disabled={logSubmitting}
+                    className="mt-2 rounded-md border border-gray-700 bg-[#0f1117] px-2 py-1 text-xs text-white outline-none focus:border-gray-500 disabled:opacity-50"
+                  />
+                )}
+                {logFollowUpAt && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    Reminder set for {formatFollowUpPreview(logFollowUpAt)}
+                  </p>
+                )}
               </div>
 
               {logError && (
