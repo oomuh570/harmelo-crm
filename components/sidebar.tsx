@@ -40,11 +40,11 @@ export default function Sidebar(){
             >
                 <div className="flex flex-col items-center gap-3 p-4">
                     <div className="mb-4 text-lg">Harmelo</div>
-                    <Link href='/' onClick={() => setOpen(false)} className="hover:text-green-300">Dashboard</Link>
-                    <Link href='/contacts' onClick={() => setOpen(false)} className="hover:text-green-300">Contacts</Link>
+                    <Link href='/' onClick={() => setOpen(false)} className="hover:text-[#00D4B8]">Dashboard</Link>
+                    <Link href='/contacts' onClick={() => setOpen(false)} className="hover:text-[#00D4B8]">Contacts</Link>
                     <button
                         onClick={() => logout()}
-                        className="border py-2 rounded-md bg-green-200 hover:bg-green-400 text-black cursor-pointer w-[60%] mt-4"
+                        className="border py-2 rounded-md bg-[#00D4B8] hover:bg-[#00D4B8]/90 text-black cursor-pointer w-[60%] mt-4"
                     >
                         Logout
                     </button>

@@ -1,11 +1,8 @@
 import Sidebar from "@/components/sidebar";
 import { mapContact } from "./contact"
 import ContactsTable from "./contacts-table"
-import { Fraunces } from "next/font/google";
 import AddContactForm from "./add-contact-form"
 import { prisma } from "@/lib/prisma"
-
-const fraunces = Fraunces({ subsets: ["latin"] });
 
 const PAGE_SIZE = 20
 
@@ -32,9 +29,9 @@ export default async function ContactsPage() {
     <div className="min-h-screen bg-[#07090F]">
       <div className="flex">
         <Sidebar />
-        <div className="flex-1 min-w-0 min-h-screen flex flex-col items-center">
-          <h1 className={`${fraunces.className} text-2xl md:text-3xl text-white pt-16 md:pt-5`}>Contacts</h1>
-          <div className="w-full max-w-3xl px-4 mt-10 md:mt-20">
+        <div className="flex-1 min-w-0 min-h-screen flex flex-col items-center pt-16 md:pt-8">
+          <h1 className="font-heading text-2xl md:text-3xl text-center text-white mb-6">Contacts</h1>
+          <div className="w-full max-w-3xl px-4">
             <AddContactForm />
             <ContactsTable initialData={contacts} initialTotalPages={totalPages} />
           </div>

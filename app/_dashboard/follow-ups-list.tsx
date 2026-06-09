@@ -93,7 +93,7 @@ export default function FollowUpsList({ followUps }: { followUps: FollowUp[] }) 
                     (due.tone === 'overdue'
                       ? 'bg-red-500/20 text-red-300'
                       : due.tone === 'today'
-                      ? 'bg-green-500/20 text-green-300'
+                      ? 'bg-[#00D4B8]/20 text-[#00D4B8]'
                       : 'bg-gray-700 text-gray-300')
                   }
                 >
@@ -111,7 +111,7 @@ export default function FollowUpsList({ followUps }: { followUps: FollowUp[] }) 
               onClick={() => handleMarkDone(f.id)}
               aria-label="Mark done"
               title="Mark done"
-              className="shrink-0 rounded-md border border-gray-700 p-1.5 text-gray-400 hover:border-green-400 hover:text-green-300 cursor-pointer"
+              className="shrink-0 rounded-md border border-gray-700 p-1.5 text-gray-400 hover:border-[#00D4B8] hover:text-[#00D4B8] cursor-pointer"
             >
               <Check className="h-3.5 w-3.5" />
             </button>

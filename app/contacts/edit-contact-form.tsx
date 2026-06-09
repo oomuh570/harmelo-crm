@@ -3,17 +3,14 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Fraunces } from 'next/font/google'
 import { X } from 'lucide-react'
 import type { Contact } from './columns'
 import { formatPhone } from './contact'
 import RichTextEditor from '@/components/rich-text-editor'
 
-const fraunces = Fraunces({ subsets: ['latin'] })
-
 const labelClass = 'text-xs uppercase tracking-wide text-gray-400'
 const inputClass =
-  'rounded-md border border-gray-700 bg-[#07090F] px-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors focus:border-green-400 focus:ring-1 focus:ring-green-400'
+  'rounded-md border border-gray-700 bg-[#07090F] px-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors focus:border-[#00D4B8] focus:ring-1 focus:ring-[#00D4B8]'
 
 const CONTACT_TYPES = [
   { value: 'FEDERAL', label: 'Federal' },
@@ -98,7 +95,7 @@ export default function EditContactForm({
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90%] max-w-md max-h-[85vh] overflow-y-auto rounded-xl border border-gray-700 bg-[#0f1117] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-800 p-6">
-          <h2 className={`${fraunces.className} text-xl text-white`}>Edit Contact</h2>
+          <h2 className="font-heading text-xl text-white">Edit Contact</h2>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -200,7 +197,7 @@ export default function EditContactForm({
             <button
               type="submit"
               disabled={pending}
-              className="rounded-md bg-green-400 px-4 py-2 text-sm font-medium text-black hover:bg-green-500 cursor-pointer disabled:opacity-50"
+              className="rounded-md bg-[#00D4B8] px-4 py-2 text-sm font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer disabled:opacity-50"
             >
               {pending ? 'Saving…' : 'Save Changes'}
             </button>

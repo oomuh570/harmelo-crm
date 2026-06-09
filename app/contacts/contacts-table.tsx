@@ -5,11 +5,15 @@ import { Search } from 'lucide-react'
 import { columns } from './columns'
 import { mapContact, type Contact } from './contact'
 import { DataTable } from './data-table'
+import ContactsFilter, {
+  EMPTY_FILTERS,
+  type FilterState,
+} from './contacts-filter'
 
 const PAGE_SIZE = 20
 
 const inputClass =
-  'w-full rounded-md border border-gray-700 bg-[#07090F] pl-9 pr-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors focus:border-green-400 focus:ring-1 focus:ring-green-400'
+  'w-full rounded-md border border-gray-700 bg-[#07090F] pl-9 pr-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors focus:border-[#00D4B8] focus:ring-1 focus:ring-[#00D4B8]'
 
 export default function ContactsTable({
   initialData,
@@ -21,6 +25,9 @@ export default function ContactsTable({
   // immediate text in the box vs the committed (debounced) search term
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
+
+  // Frontend-only for now — backend wiring (filter params on GET /api/contacts) pending.
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
 
   const [page, setPage] = useState(1)
   const [data, setData] = useState(initialData)
@@ -103,6 +110,8 @@ export default function ContactsTable({
           onChange={(e) => setSearchInput(e.target.value)}
         />
       </div>
+
+      <ContactsFilter value={filters} onChange={setFilters} />
 
       <DataTable columns={columns} data={data} />
 

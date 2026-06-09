@@ -5,17 +5,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faLock, faPhone, faUser, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 import { useActionState, useState, startTransition } from "react";
 
-import { DM_Sans } from "next/font/google";
 import SignUpAction from "@/auth/signup-action";
 
-
-
-const dmSans = DM_Sans({
-    subsets: ["latin"]
-});
-
 const inputBase =
-    "w-full rounded-md border border-gray-700 bg-[#07090F] py-2 pl-9 text-sm text-white placeholder-gray-500 outline-none transition-colors focus:border-green-400 focus:ring-1 focus:ring-green-400";
+    "w-full rounded-md border border-gray-700 bg-[#07090F] py-2 pl-9 text-sm text-white placeholder-gray-500 outline-none transition-colors focus:border-[#00D4B8] focus:ring-1 focus:ring-[#00D4B8]";
 const iconClass = "text-gray-500 absolute left-3 top-1/2 -translate-y-1/2";
 
 
@@ -42,7 +35,7 @@ export default function SignupForm() {
     return (
 
         <form onSubmit={handleSubmit}>
-            <div className={`${dmSans.className} flex flex-col gap-4 py-6`}>
+            <div className="flex flex-col gap-4 py-6">
                 <div className="relative">
                     <FontAwesomeIcon icon={faUser} className={iconClass} />
                     <input
@@ -104,7 +97,7 @@ export default function SignupForm() {
 
 
                 <button
-                    className="mt-2 w-full rounded-md bg-green-400 py-2 text-sm font-medium text-black hover:bg-green-500 cursor-pointer disabled:opacity-50"
+                    className="mt-2 w-full rounded-md bg-[#00D4B8] py-2 text-sm font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer disabled:opacity-50"
                     type="submit"
                     disabled={pending}
                     >

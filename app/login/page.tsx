@@ -1,22 +1,17 @@
 import LoginForm from "./LoginForm";
-import { Fraunces } from "next/font/google";
 import Link from "next/link";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-});
 
 export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#07090F] px-4">
       <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-[#0f1117] px-8 py-10 shadow-xl">
-        <h1 className={`${fraunces.className} text-center text-2xl text-white`}>Login</h1>
+        <h1 className="font-heading text-center text-2xl text-white">Login</h1>
         <p className="mt-1 text-center text-sm text-gray-400">Welcome back to Harmelo</p>
         <LoginForm />
         <div className="flex justify-center gap-1 text-sm">
           <p className="text-gray-400">Don&apos;t have an account?</p>
           <Link
-            className="text-green-400 hover:text-green-300 cursor-pointer"
+            className="text-[#00D4B8] hover:text-[#00D4B8]/80 cursor-pointer"
             href="/signup"
           >
             Sign Up

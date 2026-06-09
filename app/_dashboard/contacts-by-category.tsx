@@ -30,7 +30,7 @@ export default function ContactsByCategory({
             aria-hidden="true"
           >
             <div
-              className="h-full bg-green-400/60"
+              className="h-full bg-[#00D4B8]/60"
               style={{ width: `${(count / max) * 100}%` }}
             />
           </div>

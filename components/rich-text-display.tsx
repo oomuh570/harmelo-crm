@@ -22,7 +22,7 @@ export default function RichTextDisplay({ html, className, emptyFallback = '—'
 
   return (
     <div
-      className={`prose-sm prose-invert max-w-none text-sm text-gray-100 break-words [&_a]:text-green-300 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${className ?? ''}`}
+      className={`prose-sm prose-invert max-w-none text-sm text-gray-100 break-words [&_a]:text-[#00D4B8] [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${className ?? ''}`}
       dangerouslySetInnerHTML={{ __html: cleaned }}
     />
   )

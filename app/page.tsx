@@ -1,15 +1,15 @@
 import Sidebar from "@/components/sidebar";
-import { Fraunces } from "next/font/google";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { mapContact } from "@/app/contacts/contact";
 import RecentContactsList from "@/app/_dashboard/recent-contacts-list";
 import FollowUpsList, { type FollowUp } from "@/app/_dashboard/follow-ups-list";
+import RecentActivityList, {
+  type RecentActivity,
+} from "@/app/_dashboard/recent-activity-list";
 import ContactsByCategory, {
   type CategoryCount,
 } from "@/app/_dashboard/contacts-by-category";
-
-const fraunces = Fraunces({ subsets: ["latin"] });
 
 async function getRecentContacts() {
   const rows = await prisma.contact.findMany({
@@ -43,6 +43,22 @@ async function getThisWeekFollowUps(): Promise<FollowUp[]> {
     notes: r.notes,
     followUpAt: r.followUpAt!,
     contact: r.contact,
+  }));
+}
+
+async function getRecentActivity(): Promise<RecentActivity[]> {
+  const rows = await prisma.activity.findMany({
+    where: { deletedAt: null, contact: { deletedAt: null } },
+    orderBy: { occurredAt: "desc" },
+    take: 5,
+    include: { contact: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    type: r.type,
+    notes: r.notes,
+    occurredAt: r.occurredAt,
+    contact: mapContact(r.contact),
   }));
 }
 
@@ -95,12 +111,13 @@ async function getStats() {
 }
 
 export default async function Home() {
-  const [recentContacts, followUps, stats, contactsByCategory] =
+  const [recentContacts, followUps, stats, contactsByCategory, recentActivity] =
     await Promise.all([
       getRecentContacts(),
       getThisWeekFollowUps(),
       getStats(),
       getContactsByCategory(),
+      getRecentActivity(),
     ]);
 
   const cards = [
@@ -119,7 +136,7 @@ export default async function Home() {
         <Sidebar />
         <div className="flex-1 min-w-0 min-h-screen">
           <div className="mx-auto w-full max-w-6xl px-4 pt-16 md:pt-8 pb-12">
-            <h1 className={`${fraunces.className} text-2xl md:text-3xl text-white mb-6`}>
+            <h1 className="font-heading text-2xl md:text-3xl text-center text-white mb-6">
               Dashboard
             </h1>
 
@@ -160,7 +177,7 @@ export default async function Home() {
 
             <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
               <Widget title="Recent activity" className="lg:col-span-3">
-                <PlaceholderRows count={5} />
+                <RecentActivityList activities={recentActivity} />
               </Widget>
               <Widget title="Contacts by category" className="lg:col-span-2">
                 <ContactsByCategory counts={contactsByCategory} />
@@ -193,7 +210,7 @@ function Widget({
         {href && (
           <Link
             href={href}
-            className="text-xs text-gray-400 hover:text-green-300"
+            className="text-xs text-gray-400 hover:text-[#00D4B8]"
           >
             See all
           </Link>
@@ -204,22 +221,3 @@ function Widget({
   );
 }
 
-function PlaceholderRows({ count }: { count: number }) {
-  return (
-    <ul className="flex flex-col gap-3">
-      {Array.from({ length: count }).map((_, i) => (
-        <li
-          key={i}
-          className="flex items-center gap-3 rounded-md border border-gray-800 bg-[#07090F] px-3 py-2.5"
-        >
-          <div className="h-8 w-8 shrink-0 rounded-full bg-gray-800" />
-          <div className="flex-1 min-w-0">
-            <div className="h-2.5 w-1/3 rounded bg-gray-800" />
-            <div className="mt-2 h-2 w-2/3 rounded bg-gray-900" />
-          </div>
-          <div className="hidden sm:block h-2 w-12 rounded bg-gray-800" />
-        </li>
-      ))}
-    </ul>
-  );
-}

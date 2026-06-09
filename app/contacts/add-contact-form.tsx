@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Fraunces } from 'next/font/google'
 import {
   Popover,
   PopoverContent,
@@ -13,11 +12,9 @@ import {
 import { formatPhone } from './contact'
 import RichTextEditor from '@/components/rich-text-editor'
 
-const fraunces = Fraunces({ subsets: ['latin'] })
-
 const labelClass = 'text-xs uppercase tracking-wide text-gray-400'
 const inputClass =
-  'rounded-md border border-gray-700 bg-[#07090F] px-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors focus:border-green-400 focus:ring-1 focus:ring-green-400'
+  'rounded-md border border-gray-700 bg-[#07090F] px-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors focus:border-[#00D4B8] focus:ring-1 focus:ring-[#00D4B8]'
 
 const CONTACT_TYPES = [
   { value: 'FEDERAL', label: 'Federal' },
@@ -70,13 +67,13 @@ export default function AddContactForm() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="mb-2 rounded-md bg-green-400 px-4 py-2 text-sm font-medium text-black hover:bg-green-500 cursor-pointer">
+      <PopoverTrigger className="mb-2 rounded-md bg-[#00D4B8] px-4 py-2 text-sm font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer">
         Add Contact
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-h-[80vh] overflow-y-auto border border-gray-700 bg-[#0f1117] text-white">
+      <PopoverContent className="w-[calc(100vw-2rem)] max-w-sm max-h-[80vh] overflow-y-auto border border-gray-700 bg-[#0f1117] text-white">
         <PopoverHeader>
           <PopoverTitle
-            className={`${fraunces.className} mb-5 text-center text-xl text-white`}
+            className="font-heading mb-5 text-center text-xl text-white"
           >
             Add Contact
           </PopoverTitle>
@@ -158,7 +155,7 @@ export default function AddContactForm() {
             <button
               type="submit"
               disabled={pending}
-              className="mt-2 rounded-md bg-green-400 py-2 text-sm font-medium text-black hover:bg-green-500 cursor-pointer disabled:opacity-50"
+              className="mt-2 rounded-md bg-[#00D4B8] py-2 text-sm font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer disabled:opacity-50"
             >
               {pending ? 'Saving…' : 'Save Contact'}
             </button>

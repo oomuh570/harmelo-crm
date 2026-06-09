@@ -192,7 +192,7 @@ function ActivityTimeline({
                       onClick={() => onEditStart(a)}
                       aria-label="Edit activity"
                       title="Edit activity"
-                      className="text-gray-500 hover:text-green-300 transition-colors cursor-pointer"
+                      className="text-gray-500 hover:text-[#00D4B8] transition-colors cursor-pointer"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -223,7 +223,7 @@ function ActivityTimeline({
                           onClick={() => onEditTypeChange(t)}
                           className={`flex flex-col items-center gap-1 rounded-md border px-2 py-2 text-xs cursor-pointer transition-colors ${
                             selected
-                              ? 'border-green-400 bg-green-400/10 text-green-200'
+                              ? 'border-[#00D4B8] bg-[#00D4B8]/10 text-[#00D4B8]'
                               : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
                           }`}
                         >
@@ -261,7 +261,7 @@ function ActivityTimeline({
                       type="button"
                       onClick={onEditSave}
                       disabled={editSubmitting || !editNotes.trim()}
-                      className="rounded-md bg-green-400 px-3 py-1.5 text-xs font-medium text-black hover:bg-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="rounded-md bg-[#00D4B8] px-3 py-1.5 text-xs font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {editSubmitting ? 'Saving…' : 'Save'}
                     </button>
@@ -496,7 +496,7 @@ export default function ContactPopup({
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-[#0f1117] border border-gray-700 rounded-xl shadow-2xl">
         {/* Header */}
         <div className="flex items-start gap-4 p-6 border-b border-gray-800">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-400/20 text-green-300 font-semibold">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#00D4B8]/20 text-[#00D4B8] font-semibold">
             {initials(data.name) || '?'}
           </div>
           <div className="min-w-0 flex-1">
@@ -558,7 +558,7 @@ export default function ContactPopup({
             {!logOpen && (
               <button
                 onClick={() => setLogOpen(true)}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-green-300 hover:bg-green-400/10 cursor-pointer"
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[#00D4B8] hover:bg-[#00D4B8]/10 cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Log Activity
@@ -580,7 +580,7 @@ export default function ContactPopup({
                       onClick={() => setLogType(t)}
                       className={`flex flex-col items-center gap-1 rounded-md border px-2 py-2 text-xs cursor-pointer transition-colors ${
                         selected
-                          ? 'border-green-400 bg-green-400/10 text-green-200'
+                          ? 'border-[#00D4B8] bg-[#00D4B8]/10 text-[#00D4B8]'
                           : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
                       }`}
                     >
@@ -621,7 +621,7 @@ export default function ContactPopup({
                         disabled={logSubmitting}
                         className={`rounded-md border px-2.5 py-1 text-xs cursor-pointer transition-colors disabled:opacity-50 ${
                           selected
-                            ? 'border-green-400 bg-green-400/10 text-green-200'
+                            ? 'border-[#00D4B8] bg-[#00D4B8]/10 text-[#00D4B8]'
                             : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
                         }`}
                       >
@@ -635,7 +635,7 @@ export default function ContactPopup({
                     disabled={logSubmitting}
                     className={`rounded-md border px-2.5 py-1 text-xs cursor-pointer transition-colors disabled:opacity-50 ${
                       logFollowUpMode === 'custom'
-                        ? 'border-green-400 bg-green-400/10 text-green-200'
+                        ? 'border-[#00D4B8] bg-[#00D4B8]/10 text-[#00D4B8]'
                         : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
                     }`}
                   >
@@ -675,7 +675,7 @@ export default function ContactPopup({
                   type="button"
                   onClick={handleLogSave}
                   disabled={logSubmitting || !logNotes.trim()}
-                  className="rounded-md bg-green-400 px-3 py-1.5 text-xs font-medium text-black hover:bg-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-md bg-[#00D4B8] px-3 py-1.5 text-xs font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {logSubmitting ? 'Saving…' : 'Save'}
                 </button>

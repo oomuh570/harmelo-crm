@@ -28,7 +28,7 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
         link: {
           openOnClick: false,
           autolink: true,
-          HTMLAttributes: { class: 'text-green-300 underline' },
+          HTMLAttributes: { class: 'text-[#00D4B8] underline' },
         },
       }),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
@@ -46,7 +46,7 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
     editorProps: {
       attributes: {
         class:
-          'min-h-[80px] max-h-[200px] overflow-y-auto rounded-b-md border border-t-0 border-gray-700 bg-[#07090F] px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-green-300 [&_a]:underline',
+          'min-h-[80px] max-h-[200px] overflow-y-auto rounded-b-md border border-t-0 border-gray-700 bg-[#07090F] px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00D4B8] focus:ring-1 focus:ring-[#00D4B8] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#00D4B8] [&_a]:underline',
       },
     },
   })
@@ -169,7 +169,7 @@ function ToolbarButton({
       title={label}
       className={`flex h-7 w-7 items-center justify-center rounded cursor-pointer transition-colors ${
         active
-          ? 'bg-green-400/20 text-green-200'
+          ? 'bg-[#00D4B8]/20 text-[#00D4B8]'
           : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'
       }`}
     >
