@@ -15,6 +15,7 @@ import EditContactForm from "@/app/contacts/edit-contact-form"
 import ConfirmDialog from "@/components/confirm-dialog"
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import type { Contact } from "./contact"
 
 // re-exported so existing importers (`from './columns'`) keep working
@@ -35,6 +36,9 @@ function ContactAction({ contact }: { contact: Contact }) {
       if (res.ok) {
         setConfirmDelete(false)
         router.refresh()
+        toast.success('Contact deleted')
+      } else {
+        toast.error('Failed to delete contact')
       }
     })
   }
@@ -92,7 +96,34 @@ export const columns: ColumnDef<Contact>[] = [
     accessorKey: "phone",
     header: "Phone Number",
   },
-
+  {
+    id: "tags",
+    header: "Tags",
+    meta: { className: "hidden md:table-cell" },
+    cell: ({ row }) => {
+      const tags = row.original.tags ?? []
+      if (tags.length === 0) return <span className="text-gray-600">—</span>
+      const visible = tags.slice(0, 2)
+      const remaining = tags.length - visible.length
+      return (
+        <div className="flex flex-wrap items-center gap-1">
+          {visible.map((t) => (
+            <span
+              key={t.id}
+              className="inline-flex items-center rounded-full border border-[#00D4B8]/40 bg-[#00D4B8]/10 px-2 py-0.5 text-xs text-[#00D4B8]"
+            >
+              {t.name}
+            </span>
+          ))}
+          {remaining > 0 && (
+            <span className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800/50 px-2 py-0.5 text-xs text-gray-400">
+              +{remaining} more
+            </span>
+          )}
+        </div>
+      )
+    },
+  },
   {
     id:"action",
     cell: ({row}) => <ContactAction contact={row.original}/>,

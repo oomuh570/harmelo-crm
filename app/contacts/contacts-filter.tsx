@@ -15,6 +15,8 @@ const CATEGORY_OPTIONS = [
   { value: 'OTHER', label: 'Other' },
 ] as const
 
+// TODO: source from GET /api/tags so this stays in sync with the Tags Manager
+// (replaces this hardcoded placeholder list).
 const TAG_OPTIONS = ['VIP', 'Lead', 'Strategic', 'Inactive'] as const
 const REGION_OPTIONS = ['West', 'Central', 'East', 'USA'] as const
 const STATUS_OPTIONS = ['Active', 'Inactive', 'Pending'] as const
@@ -24,7 +26,6 @@ export type FilterState = {
   tags: string[]
   regions: string[]
   statuses: string[]
-  usEdosFollowUpThisWeek: boolean
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -32,7 +33,6 @@ export const EMPTY_FILTERS: FilterState = {
   tags: [],
   regions: [],
   statuses: [],
-  usEdosFollowUpThisWeek: false,
 }
 
 export function activeFilterCount(f: FilterState) {
@@ -40,8 +40,7 @@ export function activeFilterCount(f: FilterState) {
     f.categories.length +
     f.tags.length +
     f.regions.length +
-    f.statuses.length +
-    (f.usEdosFollowUpThisWeek ? 1 : 0)
+    f.statuses.length
   )
 }
 
@@ -99,24 +98,6 @@ export default function ContactsFilter({
         onToggle={(v) => toggle('statuses', v)}
         onClear={() => clearKey('statuses')}
       />
-
-      <button
-        type="button"
-        onClick={() =>
-          onChange({
-            ...value,
-            usEdosFollowUpThisWeek: !value.usEdosFollowUpThisWeek,
-          })
-        }
-        className={
-          'rounded-md border px-3 py-2 text-xs transition-colors cursor-pointer ' +
-          (value.usEdosFollowUpThisWeek
-            ? 'border-[#00D4B8] bg-[#00D4B8]/10 text-[#00D4B8]'
-            : 'border-gray-700 bg-[#07090F] text-gray-300 hover:border-gray-500')
-        }
-      >
-        US EDOs · follow-up this week
-      </button>
 
       {total > 0 && (
         <button

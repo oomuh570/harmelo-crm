@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Popover,
   PopoverContent,
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/popover'
 import { formatPhone } from './contact'
 import RichTextEditor from '@/components/rich-text-editor'
+import TagPicker from './tag-picker'
 
 const labelClass = 'text-xs uppercase tracking-wide text-gray-400'
 const inputClass =
@@ -32,6 +34,7 @@ export default function AddContactForm() {
   const [error, setError] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
+  const [tagIds, setTagIds] = useState<string[]>([])
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -42,6 +45,8 @@ export default function AddContactForm() {
     const formData = new FormData(e.currentTarget)
 
     try {
+      // TODO: include `tagIds` in the POST body once the contacts API accepts it
+      // (e.g. body: JSON.stringify({ ...Object.fromEntries(formData), tagIds })).
       const res = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,7 +57,9 @@ export default function AddContactForm() {
         setOpen(false)
         setPhone('')
         setNotes('')
+        setTagIds([])
         router.refresh()
+        toast.success('Contact added')
         return
       }
 
@@ -67,7 +74,7 @@ export default function AddContactForm() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="mb-2 rounded-md bg-[#00D4B8] px-4 py-2 text-sm font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer">
+      <PopoverTrigger className="rounded-md bg-[#00D4B8] px-4 py-2 text-sm font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer">
         Add Contact
       </PopoverTrigger>
       <PopoverContent className="w-[calc(100vw-2rem)] max-w-sm max-h-[80vh] overflow-y-auto border border-gray-700 bg-[#0f1117] text-white">
@@ -142,6 +149,11 @@ export default function AddContactForm() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className={labelClass}>Tags</label>
+              <TagPicker selectedIds={tagIds} onChange={setTagIds} />
             </div>
 
             <div className="flex flex-col gap-1.5">

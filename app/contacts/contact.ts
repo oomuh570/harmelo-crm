@@ -13,6 +13,9 @@ export type Contact = {
   address: string
   notes: string
   createdAt: Date
+  // TODO: populate from a contact↔tag join once the schema + GET /api/contacts
+  // expose it; until then this is always undefined and the table renders an em-dash.
+  tags?: { id: string; name: string }[]
 }
 
 // Raw contact shape as it comes from Prisma (server) or the JSON API (client),

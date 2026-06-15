@@ -6,6 +6,7 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  RowData,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table"
@@ -18,6 +19,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+
+declare module "@tanstack/react-table" {
+  // lets a ColumnDef opt into extra th/td classes (e.g. `hidden md:table-cell`).
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    className?: string
+  }
+}
 
 
 
@@ -48,8 +57,9 @@ export function DataTable<TData, TValue>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
+                const extra = header.column.columnDef.meta?.className ?? ""
                 return (
-                  <TableHead key={header.id} className="text-white">
+                  <TableHead key={header.id} className={`text-white ${extra}`}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -71,11 +81,14 @@ export function DataTable<TData, TValue>({
                     data-state={row.getIsSelected() && "selected"}
                     
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="text-white">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
+                    {row.getVisibleCells().map((cell) => {
+                      const extra = cell.column.columnDef.meta?.className ?? ""
+                      return (
+                        <TableCell key={cell.id} className={`text-white ${extra}`}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      )
+                    })}
                   </TableRow>
            
             ))

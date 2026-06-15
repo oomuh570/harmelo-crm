@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Mail,
   Phone,
@@ -22,6 +23,11 @@ import { mapContact } from './contact'
 import RichTextDisplay from '@/components/rich-text-display'
 import RichTextEditor from '@/components/rich-text-editor'
 import ConfirmDialog from '@/components/confirm-dialog'
+import FollowUpPicker, {
+  type FollowUpMode,
+  computePreset,
+  toDatetimeLocalValue,
+} from './follow-up-picker'
 
 type ActivityType = 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE'
 
@@ -30,6 +36,7 @@ type Activity = {
   type: ActivityType
   notes: string
   occurredAt: string
+  followUpAt: string | null
   user: { id: string; fullName: string; email: string } | null
 }
 
@@ -81,37 +88,6 @@ const activityPlaceholders: Record<ActivityType, string> = {
   NOTE: 'Anything worth remembering…',
 }
 
-type FollowUpMode = 'none' | 'tomorrow' | 'three_days' | 'next_week' | 'custom'
-
-function computePreset(mode: Exclude<FollowUpMode, 'none' | 'custom'>): Date {
-  const d = new Date()
-  d.setHours(9, 0, 0, 0)
-  if (mode === 'tomorrow') d.setDate(d.getDate() + 1)
-  else if (mode === 'three_days') d.setDate(d.getDate() + 3)
-  else if (mode === 'next_week') {
-    // Next Monday
-    const day = d.getDay() // 0=Sun..6=Sat
-    const daysUntilMonday = ((1 - day + 7) % 7) || 7
-    d.setDate(d.getDate() + daysUntilMonday)
-  }
-  return d
-}
-
-function toDatetimeLocalValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function formatFollowUpPreview(d: Date): string {
-  return d.toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: d.getMinutes() === 0 ? undefined : '2-digit',
-  })
-}
-
 function Field({
   icon,
   label,
@@ -142,11 +118,17 @@ type ActivityTimelineProps = {
   editNotes: string
   editError: string | null
   editSubmitting: boolean
+  editFollowUpMode: FollowUpMode
+  editFollowUpAt: Date | null
+  editCustomInput: string
   onEditStart: (a: Activity) => void
   onEditCancel: () => void
   onEditSave: () => void
   onEditTypeChange: (t: ActivityType) => void
   onEditNotesChange: (html: string) => void
+  onEditFollowUpPresetSelect: (mode: Exclude<FollowUpMode, 'none' | 'custom'>) => void
+  onEditCustomFollowUpSelect: () => void
+  onEditCustomInputChange: (value: string) => void
 }
 
 function ActivityTimeline({
@@ -157,11 +139,17 @@ function ActivityTimeline({
   editNotes,
   editError,
   editSubmitting,
+  editFollowUpMode,
+  editFollowUpAt,
+  editCustomInput,
   onEditStart,
   onEditCancel,
   onEditSave,
   onEditTypeChange,
   onEditNotesChange,
+  onEditFollowUpPresetSelect,
+  onEditCustomFollowUpSelect,
+  onEditCustomInputChange,
 }: ActivityTimelineProps) {
   return (
     <ol className="relative">
@@ -244,6 +232,16 @@ function ActivityTimeline({
                     />
                   </div>
 
+                  <FollowUpPicker
+                    mode={editFollowUpMode}
+                    followUpAt={editFollowUpAt}
+                    customInput={editCustomInput}
+                    disabled={editSubmitting}
+                    onPresetSelect={onEditFollowUpPresetSelect}
+                    onCustomSelect={onEditCustomFollowUpSelect}
+                    onCustomInputChange={onEditCustomInputChange}
+                  />
+
                   {editError && (
                     <p className="mt-2 text-xs text-red-400">{editError}</p>
                   )}
@@ -309,12 +307,25 @@ export default function ContactPopup({
   const [editNotes, setEditNotes] = useState('')
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
+  const [editFollowUpMode, setEditFollowUpMode] = useState<FollowUpMode>('none')
+  const [editFollowUpAt, setEditFollowUpAt] = useState<Date | null>(null)
+  const [editCustomInput, setEditCustomInput] = useState('')
 
   function startEditActivity(a: Activity) {
     setEditingId(a.id)
     setEditType(a.type)
     setEditNotes(a.notes)
     setEditError(null)
+    if (a.followUpAt) {
+      const d = new Date(a.followUpAt)
+      setEditFollowUpMode('custom')
+      setEditFollowUpAt(d)
+      setEditCustomInput(toDatetimeLocalValue(d))
+    } else {
+      setEditFollowUpMode('none')
+      setEditFollowUpAt(null)
+      setEditCustomInput('')
+    }
   }
 
   function cancelEditActivity() {
@@ -322,15 +333,76 @@ export default function ContactPopup({
     setEditNotes('')
     setEditType('NOTE')
     setEditError(null)
+    setEditFollowUpMode('none')
+    setEditFollowUpAt(null)
+    setEditCustomInput('')
+  }
+
+  function selectEditFollowUpPreset(mode: Exclude<FollowUpMode, 'none' | 'custom'>) {
+    if (editFollowUpMode === mode) {
+      setEditFollowUpMode('none')
+      setEditFollowUpAt(null)
+      return
+    }
+    setEditFollowUpMode(mode)
+    setEditFollowUpAt(computePreset(mode))
+    setEditCustomInput('')
+  }
+
+  function selectEditCustomFollowUp() {
+    if (editFollowUpMode === 'custom') {
+      setEditFollowUpMode('none')
+      setEditFollowUpAt(null)
+      setEditCustomInput('')
+      return
+    }
+    setEditFollowUpMode('custom')
+    setEditFollowUpAt(null)
+  }
+
+  function onEditCustomInputChange(value: string) {
+    setEditCustomInput(value)
+    if (!value) {
+      setEditFollowUpAt(null)
+      return
+    }
+    const d = new Date(value)
+    setEditFollowUpAt(isNaN(d.getTime()) ? null : d)
   }
 
   async function handleEditSave() {
-    // TODO: wire to PUT /api/activities/[id] once that endpoint exists.
-    // Shape: PUT /api/activities/${editingId} with { type: editType, notes: editNotes.trim() }.
-    // On success: setActivities(prev => prev.map(a => a.id === updated.id ? updated : a))
-    // On failure: setEditError(...) and keep the form open.
-    if (!editingId || !editNotes.trim()) return
-    cancelEditActivity()
+    if (!editingId || !editNotes.trim() || editSubmitting) return
+
+    setEditSubmitting(true)
+    setEditError(null)
+
+    try {
+      const res = await fetch(`/api/activities/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: editType,
+          notes: editNotes.trim(),
+          followUpAt: editFollowUpAt ? editFollowUpAt.toISOString() : null,
+        }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        setEditError(body?.error ?? 'Failed to save activity')
+        return
+      }
+
+      const updated: Activity = await res.json()
+      setActivities((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
+      cancelEditActivity()
+      router.refresh()
+      toast.success('Activity updated')
+    } catch {
+      setEditError('Failed to save activity')
+    } finally {
+      setEditSubmitting(false)
+    }
   }
 
   function resetLogForm() {
@@ -387,14 +459,19 @@ export default function ContactPopup({
       if (res.ok) {
         setActivities((prev) => prev.filter((a) => a.id !== confirmDeleteId))
         setConfirmDeleteId(null)
+        toast.success('Activity deleted')
       } else {
         const body = await res.json().catch(() => null)
-        setActivitiesError(body?.error ?? 'Failed to delete activity')
+        const message = body?.error ?? 'Failed to delete activity'
+        setActivitiesError(message)
         setConfirmDeleteId(null)
+        toast.error(message)
       }
     } catch {
-      setActivitiesError('Failed to delete activity')
+      const message = 'Failed to delete activity'
+      setActivitiesError(message)
       setConfirmDeleteId(null)
+      toast.error(message)
     } finally {
       setDeletingActivity(false)
     }
@@ -430,6 +507,7 @@ export default function ContactPopup({
       resetLogForm()
       // refresh server components so the dashboard widgets pick up the new activity
       router.refresh()
+      toast.success('Activity logged')
     } catch {
       setLogError('Failed to save activity')
     } finally {
@@ -505,6 +583,8 @@ export default function ContactPopup({
               {formatType(data.type)}
             </span>
             {loading && <span className="ml-2 text-xs text-gray-600">Refreshing…</span>}
+            {/* TODO: render data.tags here as teal chips once Contact carries
+                a tags relation (GET /api/contacts/[id] should include tag id+name). */}
           </div>
           <button
             onClick={onClose}
@@ -543,7 +623,11 @@ export default function ContactPopup({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Notes</p>
-                <RichTextDisplay html={data.notes} />
+                {data.notes && data.notes.replace(/<[^>]*>/g, '').trim() ? (
+                  <RichTextDisplay html={data.notes} />
+                ) : (
+                  <p className="text-sm text-gray-600">—</p>
+                )}
               </div>
             </div>
           </div>
@@ -600,63 +684,15 @@ export default function ContactPopup({
                 />
               </div>
 
-              <div className="mt-3">
-                <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">
-                  Follow up <span className="normal-case text-gray-600">(optional)</span>
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    [
-                      { mode: 'tomorrow', label: 'Tomorrow' },
-                      { mode: 'three_days', label: '3 days' },
-                      { mode: 'next_week', label: 'Next week' },
-                    ] as const
-                  ).map((p) => {
-                    const selected = logFollowUpMode === p.mode
-                    return (
-                      <button
-                        key={p.mode}
-                        type="button"
-                        onClick={() => selectFollowUpPreset(p.mode)}
-                        disabled={logSubmitting}
-                        className={`rounded-md border px-2.5 py-1 text-xs cursor-pointer transition-colors disabled:opacity-50 ${
-                          selected
-                            ? 'border-[#00D4B8] bg-[#00D4B8]/10 text-[#00D4B8]'
-                            : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    )
-                  })}
-                  <button
-                    type="button"
-                    onClick={selectCustomFollowUp}
-                    disabled={logSubmitting}
-                    className={`rounded-md border px-2.5 py-1 text-xs cursor-pointer transition-colors disabled:opacity-50 ${
-                      logFollowUpMode === 'custom'
-                        ? 'border-[#00D4B8] bg-[#00D4B8]/10 text-[#00D4B8]'
-                        : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-200'
-                    }`}
-                  >
-                    Custom…
-                  </button>
-                </div>
-                {logFollowUpMode === 'custom' && (
-                  <input
-                    type="datetime-local"
-                    value={logCustomInput}
-                    onChange={(e) => onCustomInputChange(e.target.value)}
-                    disabled={logSubmitting}
-                    className="mt-2 rounded-md border border-gray-700 bg-[#0f1117] px-2 py-1 text-xs text-white outline-none focus:border-gray-500 disabled:opacity-50"
-                  />
-                )}
-                {logFollowUpAt && (
-                  <p className="mt-2 text-xs text-gray-500">
-                    Reminder set for {formatFollowUpPreview(logFollowUpAt)}
-                  </p>
-                )}
-              </div>
+              <FollowUpPicker
+                mode={logFollowUpMode}
+                followUpAt={logFollowUpAt}
+                customInput={logCustomInput}
+                disabled={logSubmitting}
+                onPresetSelect={selectFollowUpPreset}
+                onCustomSelect={selectCustomFollowUp}
+                onCustomInputChange={onCustomInputChange}
+              />
 
               {logError && (
                 <p className="mt-2 text-xs text-red-400">{logError}</p>
@@ -698,11 +734,17 @@ export default function ContactPopup({
               editNotes={editNotes}
               editError={editError}
               editSubmitting={editSubmitting}
+              editFollowUpMode={editFollowUpMode}
+              editFollowUpAt={editFollowUpAt}
+              editCustomInput={editCustomInput}
               onEditStart={startEditActivity}
               onEditCancel={cancelEditActivity}
               onEditSave={handleEditSave}
               onEditTypeChange={setEditType}
               onEditNotesChange={setEditNotes}
+              onEditFollowUpPresetSelect={selectEditFollowUpPreset}
+              onEditCustomFollowUpSelect={selectEditCustomFollowUp}
+              onEditCustomInputChange={onEditCustomInputChange}
             />
           )}
         </div>

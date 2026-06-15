@@ -10,6 +10,7 @@ import RecentActivityList, {
 import ContactsByCategory, {
   type CategoryCount,
 } from "@/app/_dashboard/contacts-by-category";
+import ExportActivitiesButton from "@/app/_dashboard/export-activities-button";
 
 async function getRecentContacts() {
   const rows = await prisma.contact.findMany({
@@ -176,7 +177,12 @@ export default async function Home() {
             </section>
 
             <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-              <Widget title="Recent activity" className="lg:col-span-3">
+              <Widget
+                title="Recent activity"
+                href="/activities"
+                action={<ExportActivitiesButton compact />}
+                className="lg:col-span-3"
+              >
                 <RecentActivityList activities={recentActivity} />
               </Widget>
               <Widget title="Contacts by category" className="lg:col-span-2">
@@ -193,11 +199,13 @@ export default async function Home() {
 function Widget({
   title,
   href,
+  action,
   className = "",
   children,
 }: {
   title: string;
   href?: string;
+  action?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -207,13 +215,18 @@ function Widget({
     >
       <div className="flex items-center justify-between border-b border-gray-700 px-4 py-3">
         <h2 className="text-sm font-medium text-white">{title}</h2>
-        {href && (
-          <Link
-            href={href}
-            className="text-xs text-gray-400 hover:text-[#00D4B8]"
-          >
-            See all
-          </Link>
+        {(href || action) && (
+          <div className="flex items-center gap-3">
+            {href && (
+              <Link
+                href={href}
+                className="text-xs text-gray-400 hover:text-[#00D4B8]"
+              >
+                See all
+              </Link>
+            )}
+            {action}
+          </div>
         )}
       </div>
       <div className="p-4">{children}</div>

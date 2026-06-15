@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { X } from 'lucide-react'
 import type { Contact } from './columns'
 import { formatPhone } from './contact'
 import RichTextEditor from '@/components/rich-text-editor'
+import TagPicker from './tag-picker'
 
 const labelClass = 'text-xs uppercase tracking-wide text-gray-400'
 const inputClass =
@@ -48,6 +50,9 @@ export default function EditContactForm({
     type: contact.type,
     address: contact.address,
     notes: contact.notes,
+    // TODO: pre-populate from contact.tags (currently absent on Contact) once the
+    // schema/API expose tag relations; also extend the PUT endpoint to persist tagIds.
+    tagIds: [] as string[],
   })
 
   useEffect(() => {
@@ -77,6 +82,7 @@ export default function EditContactForm({
       if (res.ok) {
         router.refresh()
         onClose()
+        toast.success('Contact updated')
         return
       }
 
@@ -174,6 +180,14 @@ export default function EditContactForm({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass}>Tags</label>
+            <TagPicker
+              selectedIds={form.tagIds}
+              onChange={(ids) => setForm((f) => ({ ...f, tagIds: ids }))}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

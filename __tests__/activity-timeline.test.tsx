@@ -73,6 +73,7 @@ const sampleActivities = [
     type: 'EMAIL' as const,
     notes: '<p>Sent the Q3 proposal</p>',
     occurredAt: '2026-06-01T10:00:00Z',
+    followUpAt: null,
     user: { id: 'u1', fullName: 'Bradley', email: 'b@h.co' },
   },
   {
@@ -80,6 +81,7 @@ const sampleActivities = [
     type: 'CALL' as const,
     notes: '<p>Budget approved</p>',
     occurredAt: '2026-05-28T10:00:00Z',
+    followUpAt: null,
     user: { id: 'u2', fullName: 'Justin', email: 'j@h.co' },
   },
 ]
@@ -92,13 +94,21 @@ function makeFetchMock({
   activities?: typeof sampleActivities
   contactOverrides?: Record<string, unknown>
 } = {}) {
-  return vi.fn(async (input: RequestInfo | URL) => {
-    const url = typeof input === 'string' ? input : input.toString()
-    if (url.includes('/activities')) {
-      return { ok: true, json: async () => ({ activities }) }
-    }
-    return { ok: true, json: async () => ({ ...apiContact, ...contactOverrides }) }
-  })
+  return vi.fn(
+    async (
+      input: RequestInfo | URL,
+      _init?: RequestInit,
+    ): Promise<{ ok: boolean; json: () => Promise<unknown> }> => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.includes('/activities')) {
+        return { ok: true, json: async () => ({ activities }) }
+      }
+      return {
+        ok: true,
+        json: async () => ({ ...apiContact, ...contactOverrides }),
+      }
+    },
+  )
 }
 
 function renderActionCell() {
@@ -126,7 +136,7 @@ describe('Activity timeline', () => {
     await openView(user)
 
     // header and both activity notes render
-    expect(await screen.findByText('Recent Activity')).toBeInTheDocument()
+    expect(await screen.findByText('Activity')).toBeInTheDocument()
     expect(await screen.findByText('Sent the Q3 proposal')).toBeInTheDocument()
     expect(screen.getByText('Budget approved')).toBeInTheDocument()
 
