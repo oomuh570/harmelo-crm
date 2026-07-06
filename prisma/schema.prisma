@@ -63,24 +63,24 @@ enum ContactType {
 // (call, email, meeting, or freeform note). An activity with
 // a followUpAt set is what powers the follow-up reminders feature.
 model Activity {
-  id           String        @id @default(cuid())
-  type         ActivityType  @default(NOTE)
-  notes        String
-  occurredAt   DateTime      @default(now())
-  followUpAt   DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
-
-  contact      Contact       @relation(fields: [contactId], references: [id])
-  contactId    String
-
-  user         User          @relation(fields: [userId], references: [id])
-  userId       String
+  id             String          @id @default(cuid())
+  type           ActivityType    @default(NOTE)
+  notes          String
+  occurredAt     DateTime        @default(now())
+  followUpAt     DateTime?
+  followUpStatus FollowUpStatus?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  contact        Contact         @relation(fields: [contactId], references: [id])
+  contactId      String
+  user           User            @relation(fields: [userId], references: [id])
+  userId         String
 
   @@index([contactId])
   @@index([userId])
   @@index([followUpAt])
+  @@index([followUpStatus])
   @@index([deletedAt])
 }
 
@@ -91,3 +91,8 @@ enum ActivityType {
   NOTE
 }
 
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}

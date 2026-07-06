@@ -103,7 +103,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     // Read and validate the request body
     const body = await request.json();
-    const { type, notes, occurredAt, followUpAt } = body;
+    const { type, notes, occurredAt, followUpAt, followUpStatus } = body;
 
     if (!notes || typeof notes !== 'string' || notes.trim().length === 0) {
       return NextResponse.json({ error: 'Notes are required' }, { status: 400 });
@@ -113,6 +113,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (type && !allowedTypes.includes(type)) {
       return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 });
     }
+
+    const allowedFollowUpStatuses = ['PENDING', 'COMPLETED', 'CANCELLED'];
+    if (followUpStatus && !allowedFollowUpStatuses.includes(followUpStatus)) {
+      return NextResponse.json({ error: 'Invalid followUpStatus' }, { status: 400 });
+    }
+
 
     // Parse dates safely — invalid strings become a 400 instead of corrupting data
     const parsedOccurredAt = occurredAt ? new Date(occurredAt) : undefined;
@@ -131,6 +137,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         notes: notes.trim(),
         occurredAt: parsedOccurredAt, // undefined falls back to schema default (now)
         followUpAt: parsedFollowUpAt,
+        followUpStatus: parsedFollowUpAt ? followUpStatus || 'PENDING' : null,
         contactId: id,
         userId: user.id,
       },
