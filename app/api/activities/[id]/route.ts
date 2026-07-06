@@ -33,10 +33,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     // Read and validate the request body
     const body = await request.json();
-    const { type, notes, followUpAt } = body;
+    const { type, notes, followUpAt, followUpStatus } = body;
 
-    if (!notes || typeof notes !== 'string' || notes.trim().length === 0) {
-      return NextResponse.json({ error: 'Notes are required' }, { status: 400 });
+    if (notes !== undefined && (typeof notes !== 'string' || notes.trim().length === 0)) {
+      return NextResponse.json({ error: 'Notes cannot be empty' }, { status: 400 });
     }
 
     const allowedTypes = ['CALL', 'EMAIL', 'MEETING', 'NOTE'];
@@ -44,21 +44,47 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 });
     }
 
+    // Validate followUpStatus if sent (partial update — only enforced when present)
+    const allowedFollowUpStatuses = ['PENDING', 'COMPLETED', 'CANCELLED'];
+    if (
+      followUpStatus !== undefined &&
+      followUpStatus !== null &&
+      !allowedFollowUpStatuses.includes(followUpStatus)
+    ) {
+      return NextResponse.json({ error: 'Invalid followUpStatus' }, { status: 400 });
+    }
+
     const parsedFollowUpAt = followUpAt ? new Date(followUpAt) : null;
     if (parsedFollowUpAt && isNaN(parsedFollowUpAt.getTime())) {
       return NextResponse.json({ error: 'Invalid followUpAt date' }, { status: 400 });
     }
 
+    // Build the update data.
+    // Invariant from design doc: if followUpAt is null, followUpStatus must also be null.
+    const data: Record<string, unknown> = {};
+
+    if (type !== undefined) data.type = type;
+    if (notes !== undefined) data.notes = notes.trim();
+    if (followUpAt !== undefined) data.followUpAt = parsedFollowUpAt;
+
+    // followUpStatus rules:
+    // - If followUpAt is being cleared, force followUpStatus to null.
+    // - Otherwise, only update it if explicitly sent.
+    if (followUpAt !== undefined && parsedFollowUpAt === null) {
+      data.followUpStatus = null;
+    } else if (followUpStatus !== undefined) {
+      data.followUpStatus = followUpStatus;
+    }
+
     const activity = await prisma.activity.update({
       where: { id },
-      data: {
-        type: type || 'NOTE',
-        notes: notes.trim(),
-        followUpAt: parsedFollowUpAt,
-      },
+      data,
       include: {
         user: {
           select: { id: true, fullName: true, email: true },
+        },
+        contact: {
+          select: { id: true, name: true, organization: true, type: true },
         },
       },
     });
@@ -78,8 +104,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     if (!id) {
       return NextResponse.json({ error: 'Activity id is required' }, { status: 400 });
     }
-
-    // Authenticate the caller from the session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     const session = await decrypt(sessionCookie);
@@ -88,12 +112,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Read the ?permanent=true query flag (mirrors T20's pattern)
     const { searchParams } = new URL(request.url);
     const permanent = searchParams.get('permanent') === 'true';
 
-    // For soft delete, only act on activities that aren't already deleted
-    // For hard delete, any state is fine
     const existing = permanent
       ? await prisma.activity.findUnique({ where: { id } })
       : await prisma.activity.findFirst({ where: { id, deletedAt: null } });
