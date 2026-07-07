@@ -31,9 +31,10 @@ async function getThisWeekFollowUps(): Promise<FollowUp[]> {
     where: {
       deletedAt: null,
       followUpAt: { not: null, lte: endOfWeek },
+      followUpStatus: 'PENDING',
       contact: { deletedAt: null },
     },
-    orderBy: { followUpAt: "asc" },
+    orderBy: { followUpAt: 'asc' },
     take: 6,
     include: { contact: { select: { id: true, name: true } } },
   });
@@ -82,31 +83,32 @@ async function getStats() {
   const daysSinceMonday = (startOfWeek.getDay() + 6) % 7;
   startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
 
-  const [openFollowUps, totalContacts, activitiesThisWeek, overdue] =
-    await Promise.all([
-      prisma.activity.count({
-        where: {
-          followUpAt: { not: null },
-          deletedAt: null,
-          contact: { deletedAt: null },
-        },
-      }),
-      prisma.contact.count({ where: { deletedAt: null } }),
-      prisma.activity.count({
-        where: {
-          occurredAt: { gte: startOfWeek },
-          deletedAt: null,
-          contact: { deletedAt: null },
-        },
-      }),
-      prisma.activity.count({
-        where: {
-          followUpAt: { lt: startOfToday },
-          deletedAt: null,
-          contact: { deletedAt: null },
-        },
-      }),
-    ]);
+  const [openFollowUps, totalContacts, activitiesThisWeek, overdue] = await Promise.all([
+    prisma.activity.count({
+      where: {
+        followUpAt: { not: null },
+        followUpStatus: 'PENDING',
+        deletedAt: null,
+        contact: { deletedAt: null },
+      },
+    }),
+    prisma.contact.count({ where: { deletedAt: null } }),
+    prisma.activity.count({
+      where: {
+        occurredAt: { gte: startOfWeek },
+        deletedAt: null,
+        contact: { deletedAt: null },
+      },
+    }),
+    prisma.activity.count({
+      where: {
+        followUpAt: { lt: startOfToday },
+        followUpStatus: 'PENDING',
+        deletedAt: null,
+        contact: { deletedAt: null },
+      },
+    }),
+  ]);
 
   return { openFollowUps, totalContacts, activitiesThisWeek, overdue };
 }
