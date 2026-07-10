@@ -459,6 +459,7 @@ export default function ContactPopup({
       if (res.ok) {
         setActivities((prev) => prev.filter((a) => a.id !== confirmDeleteId))
         setConfirmDeleteId(null)
+        router.refresh()
         toast.success('Activity deleted')
       } else {
         const body = await res.json().catch(() => null)
