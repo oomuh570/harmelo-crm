@@ -78,7 +78,7 @@ export default function ContactsTable({
 
     const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) })
     if (search) params.set('search', search)
-
+    if (filters.categories.length > 0) params.set('type', filters.categories.join(','));
     fetch(`/api/contacts?${params.toString()}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('request failed'))))
       .then((json) => {
@@ -97,7 +97,7 @@ export default function ContactsTable({
     return () => {
       cancelled = true
     }
-  }, [page, search, reloadKey])
+  }, [page, search, filters, reloadKey])
 
   return (
     <div className="flex flex-col gap-3 min-w-0">

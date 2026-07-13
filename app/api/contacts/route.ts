@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/lib/generated/prisma/client';
+import { Prisma, ContactType } from '@/lib/generated/prisma/client';
 
 export async function GET(request: Request) {
   try {
@@ -9,6 +9,19 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const search = searchParams.get('search')?.trim() || '';
+    const typeParam = searchParams.get('type')?.trim() || '';
+    const allowedTypes = [
+      'FEDERAL',
+      'PROVINCIAL',
+      'US',
+      'INVESTOR',
+      'CUSTOMER',
+      'PARTNER',
+      'OTHER',
+    ];
+    const typeFilter = typeParam
+      ? typeParam.split(',').filter((t) => allowedTypes.includes(t))
+      : [];
 
     const safePage = page > 0 ? page : 1;
     const safeLimit = limit > 0 && limit <= 100 ? limit : 20;
@@ -16,7 +29,8 @@ export async function GET(request: Request) {
     const skip = (safePage - 1) * safeLimit;
 
     // Build the filter: always exclude soft-deleted; optionally match the search
-    // term against name / email / organization (case-insensitive)
+    // term against name / email / organization (case-insensitive); optionally
+    // filter by contact type (comma-separated list).
     const where: Prisma.ContactWhereInput = {
       deletedAt: null,
       ...(search
@@ -28,6 +42,7 @@ export async function GET(request: Request) {
             ],
           }
         : {}),
+      ...(typeFilter.length > 0 ? { type: { in: typeFilter as ContactType[] } } : {}),
     };
 
     const [contacts, totalCount] = await Promise.all([
