@@ -50,9 +50,7 @@ export default function EditContactForm({
     type: contact.type,
     address: contact.address,
     notes: contact.notes,
-    // TODO: pre-populate from contact.tags (currently absent on Contact) once the
-    // schema/API expose tag relations; also extend the PUT endpoint to persist tagIds.
-    tagIds: [] as string[],
+    tagIds: contact.tags?.map((t) => t.id) ?? ([] as string[]),
   })
 
   useEffect(() => {
@@ -73,21 +71,32 @@ export default function EditContactForm({
     setError(null)
 
     try {
+      // Extract tagIds from form, but don't send them to the PUT endpoint
+      const { tagIds, ...contactData } = form
+
       const res = await fetch(`/api/contacts/${contact.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(contactData),
       })
 
-      if (res.ok) {
-        router.refresh()
-        onClose()
-        toast.success('Contact updated')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        setError(data?.error ?? 'Failed to update contact')
+        setPending(false)
         return
       }
 
-      const data = await res.json().catch(() => null)
-      setError(data?.error ?? 'Failed to update contact')
+      // Save tags separately if any were changed
+      await fetch(`/api/contacts/${contact.id}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagIds }),
+      })
+
+      router.refresh()
+      onClose()
+      toast.success('Contact updated')
     } catch {
       setError('Failed to update contact')
     } finally {

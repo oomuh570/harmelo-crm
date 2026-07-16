@@ -28,6 +28,7 @@ import FollowUpPicker, {
   computePreset,
   toDatetimeLocalValue,
 } from './follow-up-picker'
+import TagPicker from './tag-picker'
 
 type ActivityType = 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE'
 
@@ -310,6 +311,11 @@ export default function ContactPopup({
   const [editFollowUpMode, setEditFollowUpMode] = useState<FollowUpMode>('none')
   const [editFollowUpAt, setEditFollowUpAt] = useState<Date | null>(null)
   const [editCustomInput, setEditCustomInput] = useState('')
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    data.tags?.map((t) => t.id) ?? []
+  )
+  const [savingTags, setSavingTags] = useState(false)
+  const [tagError, setTagError] = useState<string | null>(null)
 
   function startEditActivity(a: Activity) {
     setEditingId(a.id)
@@ -548,6 +554,40 @@ export default function ContactPopup({
 
   // fetch the 5 most recent activities for this contact
   useEffect(() => {
+    setSelectedTagIds(data.tags?.map((t) => t.id) ?? [])
+  }, [data.tags])
+
+  async function handleTagsChange(tagIds: string[]) {
+    try {
+      setSavingTags(true)
+      setTagError(null)
+      const res = await fetch(`/api/contacts/${data.id}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagIds }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || 'Failed to update tags')
+      }
+
+      const updated = await res.json()
+      setData((prev) => ({
+        ...prev,
+        tags: updated.tags,
+      }))
+      toast.success('Tags updated')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update tags'
+      setTagError(message)
+      toast.error(message)
+    } finally {
+      setSavingTags(false)
+    }
+  }
+
+  useEffect(() => {
     let cancelled = false
     setActivitiesLoading(true)
     setActivitiesError(null)
@@ -580,12 +620,21 @@ export default function ContactPopup({
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold text-white truncate">{data.name}</h2>
-            <span className="mt-1 inline-block rounded-full bg-gray-700/60 px-2.5 py-0.5 text-xs text-gray-300">
-              {formatType(data.type)}
-            </span>
-            {loading && <span className="ml-2 text-xs text-gray-600">Refreshing…</span>}
-            {/* TODO: render data.tags here as teal chips once Contact carries
-                a tags relation (GET /api/contacts/[id] should include tag id+name). */}
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-gray-700/60 px-2.5 py-0.5 text-xs text-gray-300">
+                {formatType(data.type)}
+              </span>
+              {loading && <span className="text-xs text-gray-600">Refreshing…</span>}
+            </div>
+            <div className="mt-2">
+              <TagPicker
+                selectedIds={selectedTagIds}
+                onChange={handleTagsChange}
+              />
+              {tagError && (
+                <p className="mt-1 text-xs text-red-400">{tagError}</p>
+              )}
+            </div>
           </div>
           <button
             onClick={onClose}

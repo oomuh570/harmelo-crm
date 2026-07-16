@@ -13,9 +13,7 @@ export type Contact = {
   address: string
   notes: string
   createdAt: Date
-  // TODO: populate from a contact↔tag join once the schema + GET /api/contacts
-  // expose it; until then this is always undefined and the table renders an em-dash.
-  tags?: { id: string; name: string }[]
+  tags?: { id: string; name: string; color: string }[]
 }
 
 // Raw contact shape as it comes from Prisma (server) or the JSON API (client),
@@ -31,6 +29,7 @@ export type RawContact = {
   address: string | null
   notes: string | null
   createdAt: string | Date
+  tags?: { id: string; name: string; color: string }[]
 }
 
 // Format a NANP phone number as the user types: 123-456-7890 (max 10 digits)
@@ -55,5 +54,6 @@ export function mapContact(c: RawContact): Contact {
     address: c.address ?? '',
     notes: c.notes ?? '',
     createdAt: new Date(c.createdAt),
+    tags: c.tags,
   }
 }

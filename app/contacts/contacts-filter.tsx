@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Check, X } from 'lucide-react'
 
-// Placeholder option lists for fields that don't exist on Contact yet
-// (tags/region/status). Replace with real values once the schema is extended.
 const CATEGORY_OPTIONS = [
   { value: 'FEDERAL', label: 'Federal' },
   { value: 'PROVINCIAL', label: 'Provincial' },
@@ -15,11 +13,13 @@ const CATEGORY_OPTIONS = [
   { value: 'OTHER', label: 'Other' },
 ] as const
 
-// TODO: source from GET /api/tags so this stays in sync with the Tags Manager
-// (replaces this hardcoded placeholder list).
-const TAG_OPTIONS = ['VIP', 'Lead', 'Strategic', 'Inactive'] as const
 const REGION_OPTIONS = ['West', 'Central', 'East', 'USA'] as const
 const STATUS_OPTIONS = ['Active', 'Inactive', 'Pending'] as const
+
+interface TagOption {
+  value: string
+  label: string
+}
 
 export type FilterState = {
   categories: string[]
@@ -51,6 +51,32 @@ export default function ContactsFilter({
   value: FilterState
   onChange: (next: FilterState) => void
 }) {
+  const [tagOptions, setTagOptions] = useState<TagOption[]>([])
+  const [tagsLoading, setTagsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await fetch('/api/tags')
+        if (!res.ok) throw new Error('Failed to fetch tags')
+        const tags = await res.json()
+        setTagOptions(
+          tags.map((t: { id: string; name: string }) => ({
+            value: t.id,
+            label: t.name,
+          }))
+        )
+      } catch (err) {
+        console.error('Failed to fetch tags:', err)
+        setTagOptions([])
+      } finally {
+        setTagsLoading(false)
+      }
+    }
+
+    fetchTags()
+  }, [])
+
   const total = activeFilterCount(value)
 
   function toggle<K extends 'categories' | 'tags' | 'regions' | 'statuses'>(
@@ -80,7 +106,8 @@ export default function ContactsFilter({
       <FilterDropdown
         label="Tags"
         selected={value.tags}
-        options={TAG_OPTIONS.map((v) => ({ value: v, label: v }))}
+        options={tagOptions}
+        loading={tagsLoading}
         onToggle={(v) => toggle('tags', v)}
         onClear={() => clearKey('tags')}
       />
@@ -119,12 +146,14 @@ function FilterDropdown({
   label,
   selected,
   options,
+  loading = false,
   onToggle,
   onClear,
 }: {
   label: string
   selected: string[]
   options: Option[]
+  loading?: boolean
   onToggle: (value: string) => void
   onClear: () => void
 }) {
@@ -156,8 +185,9 @@ function FilterDropdown({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        disabled={loading}
         className={
-          'inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs transition-colors cursor-pointer ' +
+          'inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ' +
           (count > 0
             ? 'border-[#00D4B8]/60 bg-[#00D4B8]/5 text-white'
             : 'border-gray-700 bg-[#07090F] text-gray-300 hover:border-gray-500')
@@ -175,21 +205,27 @@ function FilterDropdown({
       {open && (
         <div className="absolute left-0 top-full z-20 mt-1 w-52 overflow-hidden rounded-md border border-gray-700 bg-[#0f1117] shadow-lg">
           <ul className="max-h-64 overflow-y-auto py-1">
-            {options.map((opt) => {
-              const checked = selected.includes(opt.value)
-              return (
-                <li key={opt.value}>
-                  <button
-                    type="button"
-                    onClick={() => onToggle(opt.value)}
-                    className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-xs text-gray-200 hover:bg-gray-800 cursor-pointer"
-                  >
-                    <span className="truncate">{opt.label}</span>
-                    {checked && <Check className="h-3.5 w-3.5 text-[#00D4B8]" />}
-                  </button>
-                </li>
-              )
-            })}
+            {loading ? (
+              <li className="px-3 py-1.5 text-xs text-gray-500">Loading...</li>
+            ) : options.length === 0 ? (
+              <li className="px-3 py-1.5 text-xs text-gray-500">No options</li>
+            ) : (
+              options.map((opt) => {
+                const checked = selected.includes(opt.value)
+                return (
+                  <li key={opt.value}>
+                    <button
+                      type="button"
+                      onClick={() => onToggle(opt.value)}
+                      className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-xs text-gray-200 hover:bg-gray-800 cursor-pointer"
+                    >
+                      <span className="truncate">{opt.label}</span>
+                      {checked && <Check className="h-3.5 w-3.5 text-[#00D4B8]" />}
+                    </button>
+                  </li>
+                )
+              })
+            )}
           </ul>
           {count > 0 && (
             <div className="border-t border-gray-800">

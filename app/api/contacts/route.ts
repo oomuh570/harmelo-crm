@@ -10,6 +10,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const search = searchParams.get('search')?.trim() || '';
     const typeParam = searchParams.get('type')?.trim() || '';
+    const tagsParam = searchParams.get('tags')?.trim() || '';
     const allowedTypes = [
       'FEDERAL',
       'PROVINCIAL',
@@ -22,6 +23,9 @@ export async function GET(request: Request) {
     const typeFilter = typeParam
       ? typeParam.split(',').filter((t) => allowedTypes.includes(t))
       : [];
+    const tagFilter = tagsParam
+      ? tagsParam.split(',').filter((t) => t.length > 0)
+      : [];
 
     const safePage = page > 0 ? page : 1;
     const safeLimit = limit > 0 && limit <= 100 ? limit : 20;
@@ -30,7 +34,7 @@ export async function GET(request: Request) {
 
     // Build the filter: always exclude soft-deleted; optionally match the search
     // term against name / email / organization (case-insensitive); optionally
-    // filter by contact type (comma-separated list).
+    // filter by contact type (comma-separated list); optionally filter by tags (OR logic).
     const where: Prisma.ContactWhereInput = {
       deletedAt: null,
       ...(search
@@ -43,6 +47,15 @@ export async function GET(request: Request) {
           }
         : {}),
       ...(typeFilter.length > 0 ? { type: { in: typeFilter as ContactType[] } } : {}),
+      ...(tagFilter.length > 0
+        ? {
+            tags: {
+              some: {
+                tagId: { in: tagFilter },
+              },
+            },
+          }
+        : {}),
     };
 
     const [contacts, totalCount] = await Promise.all([
@@ -51,12 +64,21 @@ export async function GET(request: Request) {
         skip,
         take: safeLimit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          tags: {
+            where: { tag: { deletedAt: null } },
+            include: { tag: { select: { id: true, name: true, color: true } } },
+          },
+        },
       }),
       prisma.contact.count({ where }),
     ]);
 
     return NextResponse.json({
-      contacts,
+      contacts: contacts.map((c) => ({
+        ...c,
+        tags: c.tags.map((ct) => ct.tag),
+      })),
       pagination: {
         page: safePage,
         limit: safeLimit,

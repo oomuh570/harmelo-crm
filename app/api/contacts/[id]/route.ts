@@ -12,13 +12,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const contact = await prisma.contact.findFirst({
       where: { id, deletedAt: null },
+      include: {
+        tags: {
+          where: { tag: { deletedAt: null } },
+          include: { tag: { select: { id: true, name: true, color: true } } },
+        },
+      },
     });
 
     if (!contact) {
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
     }
 
-    return NextResponse.json(contact);
+    return NextResponse.json({
+      ...contact,
+      tags: contact.tags.map((ct) => ct.tag),
+    });
   } catch (error) {
     console.error('Get contact error:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

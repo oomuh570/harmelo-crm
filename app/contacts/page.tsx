@@ -15,11 +15,20 @@ async function getData() {
       where: { deletedAt: null },
       orderBy: { createdAt: 'desc' },
       take: PAGE_SIZE,
+      include: {
+        tags: {
+          where: { tag: { deletedAt: null } },
+          include: { tag: { select: { id: true, name: true, color: true } } },
+        },
+      },
     }),
     prisma.contact.count({ where: { deletedAt: null } }),
   ])
   return {
-    contacts: contacts.map(mapContact),
+    contacts: contacts.map((c) => ({
+      ...mapContact(c),
+      tags: c.tags.map((ct) => ct.tag),
+    })),
     totalPages: Math.max(1, Math.ceil(totalCount / PAGE_SIZE)),
   }
 }
