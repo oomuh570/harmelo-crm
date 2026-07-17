@@ -45,7 +45,7 @@ export default function SignupForm() {
                         className={`${inputBase} pr-3`}
                     />
                 </div>
-                {state?.errors?.fullName && (<p className="text-sm text-red-400">{state.errors.fullName}</p>)}
+                {state?.errors?.fullName && (<p className="text-sm text-red-400">{state?.errors?.fullName}</p>)}
 
                 <div className="relative">
                     <FontAwesomeIcon icon={faPhone} className={iconClass} />
@@ -59,7 +59,7 @@ export default function SignupForm() {
                         className={`${inputBase} pr-3`}
                     />
                 </div>
-                {state?.errors?.phoneNumber && (<p className="text-sm text-red-400">{state.errors.phoneNumber}</p>)}
+                {state?.errors?.phoneNumber && (<p className="text-sm text-red-400">{state?.errors?.phoneNumber}</p>)}
                 <div className="relative">
                     <FontAwesomeIcon icon={faEnvelope} className={iconClass} />
                     <input
@@ -69,7 +69,7 @@ export default function SignupForm() {
                         className={`${inputBase} pr-3`}
                     />
                 </div>
-                {state?.errors?.email && (<p className="text-sm text-red-400">{state.errors.email}</p>)}
+                {state?.errors?.email && (<p className="text-sm text-red-400">{state?.errors?.email}</p>)}
                 <div className="relative">
                     <FontAwesomeIcon icon={faLock} className={iconClass} />
                     <FontAwesomeIcon
@@ -88,7 +88,7 @@ export default function SignupForm() {
                     <div className="text-sm text-red-400">
                         <p>Password must:</p>
                         <ul>
-                        {state.errors.password.map((error) => (
+                        {state?.errors?.password?.map((error) => (
                             <li key={error}>- {error}</li>
                         ))}
                         </ul>
