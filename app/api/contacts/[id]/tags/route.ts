@@ -1,7 +1,35 @@
+/**
+ * Contact Tags API Route Handler
+ *
+ * Handles POST to assign/update tags for a contact.
+ * This endpoint uses a replace-all pattern: it deletes all existing tag associations
+ * and creates new ones based on the provided tagIds array.
+ *
+ * Body: { tagIds: string[] } - array of tag IDs to assign to the contact
+ * Response: Contact with updated tags array
+ */
+
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * POST /api/contacts/[id]/tags
+ *
+ * Assigns tags to a contact. Uses a replace-all pattern:
+ * 1. Deletes all existing ContactTag records for the contact
+ * 2. Creates new ContactTag records for each tag in tagIds
+ *
+ * This ensures the contact has exactly the tags specified, no more, no less.
+ * Passing an empty array removes all tags from the contact.
+ *
+ * Validates:
+ * - Contact exists and is not soft-deleted
+ * - All tags exist and are not soft-deleted
+ * - tagIds is an array
+ *
+ * Returns the updated contact with full tag details.
+ */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,6 +44,7 @@ export async function POST(
     const body = await request.json();
     const { tagIds } = body;
 
+    // Validate tagIds is an array
     if (!Array.isArray(tagIds)) {
       return NextResponse.json(
         { error: 'tagIds must be an array' },
@@ -23,6 +52,7 @@ export async function POST(
       );
     }
 
+    // Verify contact exists and is not soft-deleted
     const contact = await prisma.contact.findFirst({
       where: { id, deletedAt: null },
     });
@@ -31,7 +61,7 @@ export async function POST(
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
     }
 
-    // Verify all tags exist
+    // Verify all provided tags exist and are not soft-deleted
     if (tagIds.length > 0) {
       const tagsExist = await prisma.tag.findMany({
         where: { id: { in: tagIds }, deletedAt: null },
@@ -45,12 +75,14 @@ export async function POST(
       }
     }
 
-    // Delete all existing contact-tag relationships
+    // Step 1: Delete all existing contact-tag associations
+    // This cleans up any previous tags before assigning new ones
     await prisma.contactTag.deleteMany({
       where: { contactId: id },
     });
 
-    // Create new contact-tag relationships
+    // Step 2: Create new contact-tag associations
+    // tagIds can be empty (removes all tags) or contain one or more tag IDs
     if (tagIds.length > 0) {
       await prisma.contactTag.createMany({
         data: tagIds.map((tagId) => ({
@@ -60,7 +92,8 @@ export async function POST(
       });
     }
 
-    // Fetch updated contact with tags
+    // Step 3: Fetch and return the updated contact with full tag details
+    // This confirms the operation succeeded and provides the current state
     const updated = await prisma.contact.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -70,10 +103,13 @@ export async function POST(
       },
     });
 
+    // Revalidate pages so updated tag assignments are reflected immediately
     revalidatePath('/');
     revalidatePath('/contacts');
+
     return NextResponse.json({
       ...updated,
+      // Flatten ContactTag relationship to return just the tag objects
       tags: updated?.tags.map((ct) => ct.tag) ?? [],
     });
   } catch (error) {

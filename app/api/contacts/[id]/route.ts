@@ -1,7 +1,23 @@
+/**
+ * Individual Contact API Route Handler
+ *
+ * Handles GET (fetch single contact), PUT (update contact),
+ * and DELETE (soft-delete or permanently delete contact).
+ *
+ * Soft-delete pattern: by default, DELETE sets deletedAt timestamp.
+ * Permanent delete: pass ?permanent=true to DELETE to hard-delete from database.
+ */
+
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * GET /api/contacts/[id]
+ *
+ * Retrieves a single contact by ID. Returns 404 if contact not found or soft-deleted.
+ * Includes all non-deleted tags associated with the contact.
+ */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -34,6 +50,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * PUT /api/contacts/[id]
+ *
+ * Updates a single contact. All fields are optional (partial updates supported).
+ * Only fields explicitly provided in the request body are updated.
+ * Name and email, if provided, cannot be empty/whitespace-only.
+ * Returns the updated contact.
+ */
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -99,6 +123,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * DELETE /api/contacts/[id]
+ *
+ * Soft-deletes a contact by default (sets deletedAt timestamp).
+ * Pass ?permanent=true to hard-delete from database (cannot be recovered).
+ * Soft-deleted contacts are excluded from all list and search operations.
+ * Returns { success: true, permanent: boolean } to indicate which delete occurred.
+ */
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -108,6 +140,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     const { searchParams } = new URL(request.url);
+    // Soft-delete (default): marks contact as deleted but keeps data
+    // Permanent delete (?permanent=true): removes contact from database entirely
     const permanent = searchParams.get('permanent') === 'true';
 
     const existing = permanent

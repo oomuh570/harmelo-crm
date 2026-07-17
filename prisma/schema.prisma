@@ -1,3 +1,24 @@
+/**
+ * Harmelo CRM Database Schema
+ *
+ * Core models:
+ * - User: Internal users who create and manage activities
+ * - Contact: Organizations, government bodies, investors, partners, or customers
+ * - Activity: Communication logs (calls, emails, meetings, notes) tied to contacts
+ * - Tag: Labels to categorize and filter contacts
+ * - ContactTag: Junction table for many-to-many relationships between contacts and tags
+ *
+ * Soft-Delete Pattern:
+ * Models with deletedAt field use logical deletion (soft-delete).
+ * Records are marked as deleted but not removed from the database.
+ * All queries must filter WHERE deletedAt IS NULL to exclude deleted records.
+ *
+ * Indexes: Added on frequently filtered columns (type, deletedAt, contactId, etc.)
+ * for better query performance.
+ *
+ * After schema changes, run: npx prisma migrate dev --name <description>
+ */
+
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -7,6 +28,8 @@ datasource db {
   provider  = "postgresql"
 }
 
+/// User model representing internal Harmelo team members
+/// Users create and manage activities associated with contacts
 model User {
   id          String   @id @default(cuid())
   fullName    String
@@ -17,25 +40,28 @@ model User {
   activities  Activity[]
 }
 
+/// Contact model representing institutional relationships
+/// Stores details about governments, investors, partners, customers, or other entities
+/// Uses soft-delete pattern: deletedAt marks deletion without removing data
 model Contact {
   id           String       @id @default(cuid())
-  name         String
-  email        String?
-  phone        String?
-  organization String?
-  jobTitle     String?
-  type         ContactType  @default(OTHER)
-  address      String?
-  notes        String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  deletedAt    DateTime?
-  activities   Activity[]
-  tags         ContactTag[]
+  name         String       /// Required; person or organization name
+  email        String?      /// Optional; email address
+  phone        String?      /// Optional; phone number with dashes (e.g., "403-330-2322")
+  organization String?      /// Optional; organization name
+  jobTitle     String?      /// Optional; job title or role
+  type         ContactType  @default(OTHER) /// Category: FEDERAL, PROVINCIAL, US, INVESTOR, CUSTOMER, PARTNER, or OTHER
+  address      String?      /// Optional; street address
+  notes        String?      /// Optional; rich text HTML notes
+  createdAt    DateTime     @default(now()) /// Auto-set to creation timestamp
+  updatedAt    DateTime     @updatedAt      /// Auto-updated on any change
+  deletedAt    DateTime?    /// Null for active; set to deletion timestamp for soft-deleted contacts
+  activities   Activity[]   /// One-to-many: activities related to this contact
+  tags         ContactTag[] /// Many-to-many: tags applied to this contact
 
   @@index([type])
   @@index([organization])
-  @@index([deletedAt])
+  @@index([deletedAt])  /// Important for filtering out soft-deleted records
 }
 
 enum ContactType {
@@ -48,26 +74,29 @@ enum ContactType {
   OTHER
 }
 
+/// Activity model representing communications with contacts
+/// Stores calls, emails, meetings, and notes; tracks follow-ups
+/// Uses soft-delete pattern: deletedAt marks deletion without removing data
 model Activity {
   id             String          @id @default(cuid())
-  type           ActivityType    @default(NOTE)
-  notes          String
-  occurredAt     DateTime        @default(now())
-  followUpAt     DateTime?
-  followUpStatus FollowUpStatus?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime?
-  contact        Contact         @relation(fields: [contactId], references: [id])
-  contactId      String
-  user           User            @relation(fields: [userId], references: [id])
-  userId         String
+  type           ActivityType    @default(NOTE)             /// Type: CALL, EMAIL, MEETING, or NOTE
+  notes          String          /// Rich text HTML content of the activity
+  occurredAt     DateTime        @default(now())            /// When the activity took place
+  followUpAt     DateTime?       /// Optional; when to follow up on this activity
+  followUpStatus FollowUpStatus? /// Status of follow-up: PENDING, COMPLETED, or CANCELLED
+  createdAt      DateTime        @default(now())            /// Auto-set to creation timestamp
+  updatedAt      DateTime        @updatedAt                 /// Auto-updated on any change
+  deletedAt      DateTime?       /// Null for active; set for soft-deleted activities
+  contact        Contact         @relation(fields: [contactId], references: [id]) /// Associated contact
+  contactId      String          /// Foreign key to Contact
+  user           User            @relation(fields: [userId], references: [id])   /// User who created this activity
+  userId         String          /// Foreign key to User
 
   @@index([contactId])
   @@index([userId])
-  @@index([followUpAt])
-  @@index([followUpStatus])
-  @@index([deletedAt])
+  @@index([followUpAt])         /// For querying activities by follow-up date
+  @@index([followUpStatus])     /// For filtering by follow-up status
+  @@index([deletedAt])          /// Important for filtering out soft-deleted records
 }
 
 enum ActivityType {
@@ -83,27 +112,34 @@ enum FollowUpStatus {
   CANCELLED
 }
 
+/// Tag model representing labels to categorize and filter contacts
+/// Uses soft-delete pattern: deletedAt marks deletion without removing data
 model Tag {
   id        String       @id @default(cuid())
-  name      String
-  color     String       @default("#6b7280")
-  createdAt DateTime     @default(now())
-  deletedAt DateTime?
+  name      String       /// Tag name (e.g., "VIP", "Lead", "Strategic")
+  color     String       @default("#6b7280") /// Hex color for UI display
+  createdAt DateTime     @default(now())    /// Auto-set to creation timestamp
+  deletedAt DateTime?    /// Null for active; set for soft-deleted tags
 
-  contacts  ContactTag[]
+  contacts  ContactTag[] /// Many-to-many: contacts with this tag
 
+  /// Unique constraint: tag names must be unique among non-deleted tags
+  /// Allows re-using names after soft-delete (via composite unique with deletedAt)
   @@unique([name, deletedAt])
-  @@index([deletedAt])
+  @@index([deletedAt])  /// Important for filtering out soft-deleted records
 }
 
+/// ContactTag junction table for many-to-many Contact <-> Tag relationships
+/// A contact can have many tags; a tag can be applied to many contacts
 model ContactTag {
-  contact   Contact  @relation(fields: [contactId], references: [id])
-  contactId String
-  tag       Tag      @relation(fields: [tagId], references: [id])
-  tagId     String
-  createdAt DateTime @default(now())
+  contact   Contact  @relation(fields: [contactId], references: [id]) /// Associated contact
+  contactId String   /// Foreign key to Contact
+  tag       Tag      @relation(fields: [tagId], references: [id])    /// Associated tag
+  tagId     String   /// Foreign key to Tag
+  createdAt DateTime @default(now())                                  /// When this tag was applied
 
+  /// Composite primary key ensures each (contact, tag) pair appears only once
   @@id([contactId, tagId])
-  @@index([contactId])
-  @@index([tagId])
+  @@index([contactId])  /// For finding all tags for a contact
+  @@index([tagId])      /// For finding all contacts with a tag
 }

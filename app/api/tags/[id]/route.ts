@@ -1,7 +1,24 @@
+/**
+ * Individual Tag API Route Handler
+ *
+ * Handles GET (fetch single tag), PATCH (update tag name/color),
+ * and DELETE (soft-delete tag).
+ *
+ * Soft-delete pattern: DELETE sets deletedAt timestamp; the tag remains in the database
+ * but is excluded from all queries and UI.
+ * All contact associations are preserved (ContactTag records are not deleted).
+ */
+
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * GET /api/tags/[id]
+ *
+ * Retrieves a single tag by ID. Returns 404 if tag not found or soft-deleted.
+ * Includes contactCount of unique non-deleted contacts using the tag.
+ */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -36,6 +53,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
+/**
+ * PATCH /api/tags/[id]
+ *
+ * Updates a tag's name and/or color. Both fields are optional (partial updates supported).
+ * Name, if provided, must not be empty and must be unique (case-insensitive) among non-deleted tags.
+ * Color, if not provided or empty, defaults to '#6b7280'.
+ * Returns the updated tag with current contactCount.
+ */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -47,10 +72,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const body = await request.json();
     const { name, color } = body;
 
+    // Validate name: if provided, must not be empty or whitespace-only
     if (name !== undefined && (typeof name !== 'string' || name.trim().length === 0)) {
       return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
     }
 
+    // Verify tag exists
     const existing = await prisma.tag.findFirst({
       where: { id, deletedAt: null },
     });
@@ -59,6 +86,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
 
+    // Check for duplicate name (case-insensitive), excluding self
     if (name !== undefined) {
       const trimmedName = name.trim();
       const duplicate = await prisma.tag.findFirst({
@@ -105,6 +133,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
+/**
+ * DELETE /api/tags/[id]
+ *
+ * Soft-deletes a tag by setting deletedAt timestamp.
+ * The tag is excluded from all queries and UI.
+ * Contact associations (ContactTag records) are preserved in case of future recovery.
+ * Returns { success: true, message: "Tag has been deleted" }.
+ */
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -113,6 +149,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Tag id is required' }, { status: 400 });
     }
 
+    // Fetch tag with contact count for the success message
     const existing = await prisma.tag.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -124,6 +161,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
 
+    // Soft-delete: set deletedAt timestamp
     await prisma.tag.update({
       where: { id },
       data: { deletedAt: new Date() },

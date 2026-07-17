@@ -1,7 +1,24 @@
+/**
+ * Tags API Route Handler
+ *
+ * Handles GET (list all non-deleted tags) and POST (create new tag).
+ * Uses soft-delete pattern: deleted tags are excluded from queries (deletedAt is not null).
+ *
+ * Response format includes contactCount: the number of unique non-deleted contacts
+ * assigned to each tag (deduplicated using Set).
+ */
+
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * GET /api/tags
+ *
+ * Retrieves all non-deleted tags sorted by name (ascending).
+ * Each tag includes a contactCount showing how many unique non-deleted contacts use it.
+ * Response: Tag[] = { id, name, color, contactCount }
+ */
 export async function GET() {
   try {
     const tags = await prisma.tag.findMany({
@@ -29,17 +46,27 @@ export async function GET() {
   }
 }
 
+/**
+ * POST /api/tags
+ *
+ * Creates a new tag. Name is required and must be unique (case-insensitive).
+ * Color is optional and defaults to '#6b7280' if not provided.
+ * Returns the created tag with status 201 and contactCount of 0.
+ * Revalidates /tags page cache.
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { name, color } = body;
 
+    // Name is required and cannot be empty or whitespace-only
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     const trimmedName = name.trim();
 
+    // Check for duplicate tag name (case-insensitive) among non-deleted tags
     const existing = await prisma.tag.findFirst({
       where: {
         name: { equals: trimmedName, mode: 'insensitive' },
