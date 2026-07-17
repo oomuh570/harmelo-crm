@@ -21,10 +21,13 @@ async function getData() {
     prisma.contact.count({ where: { deletedAt: null } }),
   ])
   return {
-    contacts: contacts.map((c) => ({
-      ...mapContact(c),
-      tags: c.tags.map((ct) => ct.tag),
-    })),
+    contacts: contacts.map((c) => {
+      const flattenedTags = c.tags.map((ct) => ct.tag)
+      return mapContact({
+        ...c,
+        tags: flattenedTags,
+      })
+    }),
     totalPages: Math.max(1, Math.ceil(totalCount / PAGE_SIZE)),
   }
 }
