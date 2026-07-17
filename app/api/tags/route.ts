@@ -7,7 +7,10 @@ export async function GET() {
     const tags = await prisma.tag.findMany({
       where: { deletedAt: null },
       include: {
-        contacts: { select: { contactId: true } },
+        contacts: {
+          where: { contact: { deletedAt: null } },
+          select: { contactId: true },
+        },
       },
       orderBy: { name: 'asc' },
     });

@@ -1,14 +1,28 @@
 'use client';
 import { Download } from 'lucide-react';
 import { useState } from 'react';
+import type { FilterState } from './contacts-filter';
 
-export default function ExportContactsButton() {
+interface ExportContactsButtonProps {
+  search?: string;
+  filters?: FilterState;
+}
+
+export default function ExportContactsButton({
+  search = '',
+  filters,
+}: ExportContactsButtonProps) {
   const [loading, setLoading] = useState(false);
 
   async function handleExport() {
     setLoading(true);
     try {
-      const res = await fetch('/api/exports/contacts');
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (filters?.categories.length) params.set('type', filters.categories.join(','));
+      if (filters?.tags.length) params.set('tagIds', filters.tags.join(','));
+
+      const res = await fetch(`/api/exports/contacts?${params.toString()}`);
       if (!res.ok) throw new Error('Export failed');
 
       const blob = await res.blob();

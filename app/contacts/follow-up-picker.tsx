@@ -99,7 +99,8 @@ export default function FollowUpPicker({
           value={customInput}
           onChange={(e) => onCustomInputChange(e.target.value)}
           disabled={disabled}
-          className="mt-2 rounded-md border border-gray-700 bg-[#0f1117] px-2 py-1 text-xs text-white outline-none focus:border-gray-500 disabled:opacity-50"
+          className="mt-2 rounded-md border border-gray-700 bg-[#1a1f2e] px-3 py-2 text-sm text-white outline-none focus:border-[#00D4B8] focus:ring-1 focus:ring-[#00D4B8] disabled:opacity-50"
+          style={{ colorScheme: 'light', filter: 'brightness(1.3)' }}
         />
       )}
       {followUpAt && (

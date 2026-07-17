@@ -65,6 +65,16 @@ export default function EditContactForm({
     return (e: FormFieldEvent) => setForm((f) => ({ ...f, [field]: e.target.value }))
   }
 
+  function getErrors() {
+    const errors: Record<string, string> = {}
+    if (!form.name.trim()) errors.name = 'Name is required'
+    if (!form.email.trim()) errors.email = 'Email is required'
+    return errors
+  }
+
+  const errors = getErrors()
+  const isValid = Object.keys(errors).length === 0
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setPending(true)
@@ -124,17 +134,23 @@ export default function EditContactForm({
         <form className="flex flex-col gap-4 p-6" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}>Name</label>
-            <input className={inputClass} value={form.name} onChange={update('name')} />
+            <input 
+              className={inputClass + (errors.name ? ' border-red-500' : '')} 
+              value={form.name} 
+              onChange={update('name')} 
+            />
+            {errors.name && <p className="text-xs text-red-400">{errors.name}</p>}
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}>Email</label>
             <input
-              className={inputClass}
+              className={inputClass + (errors.email ? ' border-red-500' : '')}
               type="email"
               value={form.email}
               onChange={update('email')}
             />
+            {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
           </div>
 
           <div className="flex flex-col gap-1.5">

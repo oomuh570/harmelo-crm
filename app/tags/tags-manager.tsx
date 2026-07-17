@@ -25,9 +25,18 @@ export default function TagsManager() {
     fetchTags()
   }, [])
 
+  // Refetch tags when page regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchTags()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
+
   async function fetchTags() {
     try {
-      setLoading(true)
       setError(null)
       const res = await fetch('/api/tags')
       if (!res.ok) throw new Error('Failed to fetch tags')

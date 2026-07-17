@@ -13,7 +13,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const tag = await prisma.tag.findFirst({
       where: { id, deletedAt: null },
       include: {
-        contacts: { select: { contactId: true } },
+        contacts: {
+          where: { contact: { deletedAt: null } },
+          select: { contactId: true },
+        },
       },
     });
 
@@ -82,7 +85,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       where: { id },
       data,
       include: {
-        contacts: { select: { contactId: true } },
+        contacts: {
+          where: { contact: { deletedAt: null } },
+          select: { contactId: true },
+        },
       },
     });
 

@@ -9,6 +9,7 @@ import ContactsFilter, {
   EMPTY_FILTERS,
   type FilterState,
 } from './contacts-filter'
+import ExportContactsButton from './export-contacts-button'
 
 const PAGE_SIZE = 20
 
@@ -22,28 +23,19 @@ export default function ContactsTable({
   initialData: Contact[]
   initialTotalPages: number
 }) {
-  // immediate text in the box vs the committed (debounced) search term
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
-
-  // Frontend-only for now — backend wiring (filter params on GET /api/contacts) pending.
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
-
   const [page, setPage] = useState(1)
   const [data, setData] = useState(initialData)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
   const [loading, setLoading] = useState(false)
-  // bumped to force a refetch of the current page/search after a mutation
   const [reloadKey, setReloadKey] = useState(0)
 
-  // the first render already has server-provided data — don't refetch it
   const isFirst = useRef(true)
-  // skip the mount so the debounce doesn't reset the page before any typing
   const searchFirst = useRef(true)
-  // skip the mount so the initial server data isn't treated as a change
   const dataFirst = useRef(true)
 
-  // debounce the search box, and reset to page 1 whenever the term changes
   useEffect(() => {
     if (searchFirst.current) {
       searchFirst.current = false
@@ -56,8 +48,6 @@ export default function ContactsTable({
     return () => clearTimeout(t)
   }, [searchInput])
 
-  // when the server re-renders with fresh data (add/edit/delete + router.refresh()),
-  // refetch the current page/search so the table reflects the change in place
   useEffect(() => {
     if (dataFirst.current) {
       dataFirst.current = false
@@ -66,7 +56,6 @@ export default function ContactsTable({
     setReloadKey((k) => k + 1)
   }, [initialData])
 
-  // fetch a page from the endpoint when page, search, or reloadKey changes
   useEffect(() => {
     if (isFirst.current) {
       isFirst.current = false
@@ -112,7 +101,10 @@ export default function ContactsTable({
         />
       </div>
 
-      <ContactsFilter value={filters} onChange={setFilters} />
+      <div className="flex items-center justify-between gap-2">
+        <ContactsFilter value={filters} onChange={setFilters} />
+        <ExportContactsButton search={search} filters={filters} />
+      </div>
 
       <DataTable columns={columns} data={data} />
 

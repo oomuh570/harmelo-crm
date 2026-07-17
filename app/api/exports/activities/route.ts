@@ -35,6 +35,7 @@ export async function GET(request: Request) {
 
     const where: Prisma.ActivityWhereInput = {
       deletedAt: null,
+      contact: { deletedAt: null },
       ...(search
         ? {
             contact: {

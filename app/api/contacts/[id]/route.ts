@@ -45,8 +45,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json();
     const { name, email, phone, organization, jobTitle, type, address, notes } = body;
 
+    // Name is required and cannot be empty
     if (name !== undefined && (typeof name !== 'string' || name.trim().length === 0)) {
       return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
+    }
+
+    // Email is required and cannot be empty
+    if (email !== undefined && (typeof email !== 'string' || email.trim().length === 0)) {
+      return NextResponse.json({ error: 'Email cannot be empty' }, { status: 400 });
     }
 
     const allowedTypes = [
@@ -71,7 +77,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name.trim();
-    if (email !== undefined) data.email = email || null;
+    if (email !== undefined) data.email = email.trim();
     if (phone !== undefined) data.phone = phone || null;
     if (organization !== undefined) data.organization = organization || null;
     if (jobTitle !== undefined) data.jobTitle = jobTitle || null;
