@@ -13,9 +13,6 @@ const CATEGORY_OPTIONS = [
   { value: 'OTHER', label: 'Other' },
 ] as const
 
-const REGION_OPTIONS = ['West', 'Central', 'East', 'USA'] as const
-const STATUS_OPTIONS = ['Active', 'Inactive', 'Pending'] as const
-
 interface TagOption {
   value: string
   label: string
@@ -24,24 +21,15 @@ interface TagOption {
 export type FilterState = {
   categories: string[]
   tags: string[]
-  regions: string[]
-  statuses: string[]
 }
 
 export const EMPTY_FILTERS: FilterState = {
   categories: [],
   tags: [],
-  regions: [],
-  statuses: [],
 }
 
 export function activeFilterCount(f: FilterState) {
-  return (
-    f.categories.length +
-    f.tags.length +
-    f.regions.length +
-    f.statuses.length
-  )
+  return f.categories.length + f.tags.length
 }
 
 export default function ContactsFilter({
@@ -79,10 +67,7 @@ export default function ContactsFilter({
 
   const total = activeFilterCount(value)
 
-  function toggle<K extends 'categories' | 'tags' | 'regions' | 'statuses'>(
-    key: K,
-    item: string,
-  ) {
+  function toggle<K extends 'categories' | 'tags'>(key: K, item: string) {
     const current = value[key]
     const next = current.includes(item)
       ? current.filter((v) => v !== item)
@@ -90,7 +75,7 @@ export default function ContactsFilter({
     onChange({ ...value, [key]: next })
   }
 
-  function clearKey(key: 'categories' | 'tags' | 'regions' | 'statuses') {
+  function clearKey(key: 'categories' | 'tags') {
     onChange({ ...value, [key]: [] })
   }
 
@@ -110,20 +95,6 @@ export default function ContactsFilter({
         loading={tagsLoading}
         onToggle={(v) => toggle('tags', v)}
         onClear={() => clearKey('tags')}
-      />
-      <FilterDropdown
-        label="Region"
-        selected={value.regions}
-        options={REGION_OPTIONS.map((v) => ({ value: v, label: v }))}
-        onToggle={(v) => toggle('regions', v)}
-        onClear={() => clearKey('regions')}
-      />
-      <FilterDropdown
-        label="Status"
-        selected={value.statuses}
-        options={STATUS_OPTIONS.map((v) => ({ value: v, label: v }))}
-        onToggle={(v) => toggle('statuses', v)}
-        onClear={() => clearKey('statuses')}
       />
 
       {total > 0 && (

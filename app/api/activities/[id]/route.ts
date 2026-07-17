@@ -24,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     // Only edit activities that aren't soft-deleted
     const existing = await prisma.activity.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true },
+      select: { id: true, type: true, notes: true },
     });
 
     if (!existing) {
@@ -35,13 +35,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json();
     const { type, notes, followUpAt, followUpStatus } = body;
 
-    if (notes !== undefined && (typeof notes !== 'string' || notes.trim().length === 0)) {
-      return NextResponse.json({ error: 'Notes cannot be empty' }, { status: 400 });
+    if (notes !== undefined && notes !== null && typeof notes !== 'string') {
+      return NextResponse.json({ error: 'Notes must be a string' }, { status: 400 });
     }
 
     const allowedTypes = ['CALL', 'EMAIL', 'MEETING', 'NOTE'];
     if (type && !allowedTypes.includes(type)) {
       return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 });
+    }
+
+    // NOTE-type activities must have non-empty notes. Check the effective
+    // post-update values, since this is a partial update.
+    const effectiveType = type ?? existing.type;
+    const effectiveNotes =
+      notes !== undefined ? (typeof notes === 'string' ? notes.trim() : '') : existing.notes;
+    if (effectiveType === 'NOTE' && effectiveNotes.length === 0) {
+      return NextResponse.json(
+        { error: 'Notes are required for a note activity' },
+        { status: 400 },
+      );
     }
 
     // Validate followUpStatus if sent (partial update — only enforced when present)
@@ -64,7 +76,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const data: Record<string, unknown> = {};
 
     if (type !== undefined) data.type = type;
-    if (notes !== undefined) data.notes = notes.trim();
+    if (notes !== undefined) data.notes = typeof notes === 'string' ? notes.trim() : '';
     if (followUpAt !== undefined) data.followUpAt = parsedFollowUpAt;
 
     // followUpStatus rules:

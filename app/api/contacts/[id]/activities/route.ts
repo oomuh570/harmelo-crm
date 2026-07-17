@@ -105,13 +105,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const body = await request.json();
     const { type, notes, occurredAt, followUpAt, followUpStatus } = body;
 
-    if (!notes || typeof notes !== 'string' || notes.trim().length === 0) {
-      return NextResponse.json({ error: 'Notes are required' }, { status: 400 });
+    if (notes !== undefined && notes !== null && typeof notes !== 'string') {
+      return NextResponse.json({ error: 'Notes must be a string' }, { status: 400 });
     }
 
     const allowedTypes = ['CALL', 'EMAIL', 'MEETING', 'NOTE'];
     if (type && !allowedTypes.includes(type)) {
       return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 });
+    }
+
+    // NOTE-type activities must have non-empty notes; other types are freeform
+    const resolvedType = type || 'NOTE';
+    const trimmedNotes = typeof notes === 'string' ? notes.trim() : '';
+    if (resolvedType === 'NOTE' && trimmedNotes.length === 0) {
+      return NextResponse.json(
+        { error: 'Notes are required for a note activity' },
+        { status: 400 },
+      );
     }
 
     const allowedFollowUpStatuses = ['PENDING', 'COMPLETED', 'CANCELLED'];
@@ -133,8 +143,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const activity = await prisma.activity.create({
       data: {
-        type: type || 'NOTE',
-        notes: notes.trim(),
+        type: resolvedType,
+        notes: trimmedNotes,
         occurredAt: parsedOccurredAt, // undefined falls back to schema default (now)
         followUpAt: parsedFollowUpAt,
         followUpStatus: parsedFollowUpAt ? followUpStatus || 'PENDING' : null,

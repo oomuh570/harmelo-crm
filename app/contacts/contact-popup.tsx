@@ -259,7 +259,7 @@ function ActivityTimeline({
                     <button
                       type="button"
                       onClick={onEditSave}
-                      disabled={editSubmitting || !editNotes.trim()}
+                      disabled={editSubmitting || (editType === 'NOTE' && !editNotes.trim())}
                       className="rounded-md bg-[#00D4B8] px-3 py-1.5 text-xs font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {editSubmitting ? 'Saving…' : 'Save'}
@@ -377,7 +377,11 @@ export default function ContactPopup({
   }
 
   async function handleEditSave() {
-    if (!editingId || !editNotes.trim() || editSubmitting) return
+    if (!editingId || editSubmitting) return
+    if (editType === 'NOTE' && !editNotes.trim()) {
+      setEditError('Notes are required for a note activity')
+      return
+    }
 
     setEditSubmitting(true)
     setEditError(null)
@@ -485,8 +489,12 @@ export default function ContactPopup({
   }
 
   async function handleLogSave() {
+    if (logSubmitting) return
     const trimmed = logNotes.trim()
-    if (!trimmed || logSubmitting) return
+    if (logType === 'NOTE' && !trimmed) {
+      setLogError('Notes are required for a note activity')
+      return
+    }
 
     setLogSubmitting(true)
     setLogError(null)
@@ -577,6 +585,7 @@ export default function ContactPopup({
         ...prev,
         tags: updated.tags,
       }))
+      router.refresh()
       toast.success('Tags updated')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update tags'
@@ -760,7 +769,7 @@ export default function ContactPopup({
                 <button
                   type="button"
                   onClick={handleLogSave}
-                  disabled={logSubmitting || !logNotes.trim()}
+                  disabled={logSubmitting || (logType === 'NOTE' && !logNotes.trim())}
                   className="rounded-md bg-[#00D4B8] px-3 py-1.5 text-xs font-medium text-black hover:bg-[#00D4B8]/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {logSubmitting ? 'Saving…' : 'Save'}
