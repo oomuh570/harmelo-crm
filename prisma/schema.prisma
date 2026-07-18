@@ -34,9 +34,16 @@ model User {
   id          String   @id @default(cuid())
   fullName    String
   email       String   @unique
-  phoneNumber String?
   password    String
+  phoneNumber String?
+
+  // Gmail OAuth
+  gmailConnected    Boolean?     @default(false)
+  gmailRefreshToken String?      // Encrypted refresh token
+  gmailLastSync     DateTime?    // When we last synced emails
+  
   createdAt   DateTime @default(now())
+  
   activities  Activity[]
 }
 
