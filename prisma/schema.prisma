@@ -98,12 +98,17 @@ model Activity {
   contactId      String          /// Foreign key to Contact
   user           User            @relation(fields: [userId], references: [id])   /// User who created this activity
   userId         String          /// Foreign key to User
-
+  
+  // Gmail sync fields
+  externalEmailId String?       @unique /// Gmail message ID for deduplication
+  isAutoLogged    Boolean?      @default(false) /// true if auto-logged from Gmail
+  
   @@index([contactId])
   @@index([userId])
   @@index([followUpAt])         /// For querying activities by follow-up date
   @@index([followUpStatus])     /// For filtering by follow-up status
   @@index([deletedAt])          /// Important for filtering out soft-deleted records
+  @@index([externalEmailId])
 }
 
 enum ActivityType {
