@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/session';
 import { ContactType } from '@/lib/generated/prisma/client';
+import { revalidatePath } from 'next/cache';
 import { Readable } from 'stream';
 import csvParser from 'csv-parser';
 
@@ -138,6 +139,9 @@ export async function POST(request: Request) {
         skipCount++;
       }
     }
+
+    // Revalidate contacts page to show new contacts immediately
+    revalidatePath('/contacts');
 
     return NextResponse.json({
       success: true,
