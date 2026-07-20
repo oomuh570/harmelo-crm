@@ -24,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     // Only edit activities that aren't soft-deleted
     const existing = await prisma.activity.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, type: true, notes: true },
+      select: { id: true, type: true, notes: true, followUpAt: true },
     });
 
     if (!existing) {
@@ -52,7 +52,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (effectiveType === 'NOTE' && effectiveNotes.length === 0) {
       return NextResponse.json(
         { error: 'Notes are required for a note activity' },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -71,6 +71,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Invalid followUpAt date' }, { status: 400 });
     }
 
+    // Check if followUpAt date changed
+    const dateChanged =
+      followUpAt !== undefined && existing.followUpAt?.getTime() !== parsedFollowUpAt?.getTime();
+
     // Build the update data.
     // Invariant from design doc: if followUpAt is null, followUpStatus must also be null.
     const data: Record<string, unknown> = {};
@@ -78,6 +82,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (type !== undefined) data.type = type;
     if (notes !== undefined) data.notes = typeof notes === 'string' ? notes.trim() : '';
     if (followUpAt !== undefined) data.followUpAt = parsedFollowUpAt;
+
+    // Reset reminder flag if date changed so new reminder will send
+    if (dateChanged) {
+      data.reminderSent = false;
+    }
 
     // followUpStatus rules:
     // - If followUpAt is being cleared, force followUpStatus to null.

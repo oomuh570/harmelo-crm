@@ -99,6 +99,9 @@ model Activity {
   user           User            @relation(fields: [userId], references: [id])   /// User who created this activity
   userId         String          /// Foreign key to User
   
+  // Reminder tracking
+  reminderSent    Boolean?  @default(false)  // Track if reminder email was sent
+  
   // Gmail sync fields
   externalEmailId String?       @unique /// Gmail message ID for deduplication
   isAutoLogged    Boolean?      @default(false) /// true if auto-logged from Gmail
