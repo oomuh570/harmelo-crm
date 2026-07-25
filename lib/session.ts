@@ -22,8 +22,8 @@ function deriveKey(secret: string): Buffer {
  * Returns base64-encoded IV + ciphertext
  */
 export function encrypt(data: string): string {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) throw new Error('NEXTAUTH_SECRET not set');
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error('SESSION_SECRET not set');
 
   const key = deriveKey(secret);
   const iv = crypto.randomBytes(16);
@@ -42,8 +42,8 @@ export function encrypt(data: string): string {
  * Returns null if session doesn't exist or is invalid
  */
 export function decrypt(encrypted: string | undefined): Record<string, unknown> | null {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) throw new Error('NEXTAUTH_SECRET not set');
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error('SESSION_SECRET not set');
 
   // Handle missing or empty encrypted data - return null instead of throwing
   if (!encrypted) {
@@ -73,8 +73,8 @@ export function decrypt(encrypted: string | undefined): Record<string, unknown> 
  * Same as decrypt but returns string instead of parsing JSON
  */
 export function decryptToken(encrypted: string | undefined): string | null {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) throw new Error('NEXTAUTH_SECRET not set');
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error('SESSION_SECRET not set');
 
   // Handle missing or empty encrypted data - return null instead of throwing
   if (!encrypted) {

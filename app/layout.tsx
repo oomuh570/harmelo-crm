@@ -33,7 +33,7 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", dmSans.variable, fraunces.variable)}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
         <Toaster theme="dark" position="bottom-right" richColors closeButton />
       </body>
