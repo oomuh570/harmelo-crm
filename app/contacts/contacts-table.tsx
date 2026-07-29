@@ -128,7 +128,7 @@ export default function ContactsTable({
             disabled={page >= totalPages || loading}
             className="rounded-md border border-gray-700 px-3 py-1.5 text-gray-200 hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
-            Next
+             Next
           </button>
         </div>
       </div>
