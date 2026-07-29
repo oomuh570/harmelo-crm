@@ -44,7 +44,7 @@ export default async function LoginAction(state: any, formData: FormData) {
     };
   }
 
-  await createSession(userId);
+  await createSession(userId, email);
   redirect('/');
 }
 

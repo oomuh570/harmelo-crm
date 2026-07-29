@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom"
 
-export default function Modal({contact, onClose}: {contact: string}){
+export default function Modal({contact, onClose}: {contact: string; onClose: () => void}){
     return createPortal(
         <>
             <div className="bg-black/60 top-0 left-0 bottom-0 right-0 z-1000 fixed"></div>

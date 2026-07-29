@@ -4,7 +4,19 @@ import { redirect } from 'next/navigation';
 import { createSession } from '@/lib/session';
 import { SignupSchema } from './definitions';
 
-export default async function SignUpAction(state: any, formData: FormData) {
+type SignUpErrors = {
+  fullName?: string[];
+  email?: string[];
+  phoneNumber?: string[];
+  password?: string[];
+};
+
+export type SignUpState = { errors?: SignUpErrors } | undefined;
+
+export default async function SignUpAction(
+  state: SignUpState,
+  formData: FormData,
+): Promise<SignUpState> {
   const validationResult = SignupSchema.safeParse({
     fullName: formData.get('fullName'),
     email: formData.get('email'),
@@ -47,6 +59,6 @@ export default async function SignUpAction(state: any, formData: FormData) {
     };
   }
 
-  await createSession(userId);
+  await createSession(userId, email);
   redirect('/');
 }
