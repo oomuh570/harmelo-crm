@@ -149,7 +149,7 @@ npx prisma migrate dev --name <description>
 * **Live URL:** [harmelo-crm.vercel.app](https://harmelo-crm.vercel.app)
 * **Platform:** Vercel (auto-deploy on `main` branch push)
 * **Database:** PostgreSQL on Supabase
-* **Status:** ✅ Production Ready
+* **Status:** Production Ready
 
 ---
 
