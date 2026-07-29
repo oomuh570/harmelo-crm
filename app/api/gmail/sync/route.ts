@@ -5,11 +5,19 @@ import { prisma } from '@/lib/prisma';
 import { decrypt, decryptToken } from '@/lib/session';
 
 /**
+ * POST /api/gmail/sync?workspaceId=X
  * Sync emails from Gmail and create Activity records
- * POST /api/gmail/sync
+ * User must have access to workspace
  */
 export async function POST(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const workspaceId = searchParams.get('workspaceId');
+
+    if (!workspaceId) {
+      return NextResponse.json({ error: 'workspaceId required' }, { status: 400 });
+    }
+
     // Get user session
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
@@ -21,6 +29,18 @@ export async function POST(request: Request) {
     const session = decrypt(sessionCookie);
     if (!session?.userId || typeof session.userId !== 'string') {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
+    // Check workspace access
+    const access = await prisma.workspaceUser.findFirst({
+      where: {
+        workspaceId,
+        userId: session.userId,
+      },
+    });
+
+    if (!access) {
+      return NextResponse.json({ error: 'No access to this workspace' }, { status: 403 });
     }
 
     // Get user and check if Gmail is connected
@@ -92,10 +112,11 @@ export async function POST(request: Request) {
 
         if (existing) continue;
 
-        // Find matching contact
+        // Find matching contact in this workspace
         const contact = await prisma.contact.findFirst({
           where: {
             email: fromEmail,
+            workspaceId,
             deletedAt: null,
           },
         });

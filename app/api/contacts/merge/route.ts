@@ -4,11 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/session';
 
 /**
+ * POST /api/contacts/merge
  * Merge two contacts together
  * fromContactId: contact to merge FROM (will be deleted)
  * toContactId: contact to merge INTO (will be kept)
- *
- * POST /api/contacts/merge
+ * User must be EDITOR+ in contact's workspace
  */
 export async function POST(request: Request) {
   try {
@@ -26,11 +26,11 @@ export async function POST(request: Request) {
     }
 
     // Parse request body
-    const { fromContactId, toContactId } = await request.json();
+    const { fromContactId, toContactId, workspaceId } = await request.json();
 
-    if (!fromContactId || !toContactId) {
+    if (!fromContactId || !toContactId || !workspaceId) {
       return NextResponse.json(
-        { error: 'fromContactId and toContactId required' },
+        { error: 'fromContactId, toContactId, and workspaceId required' },
         { status: 400 }
       );
     }
@@ -39,13 +39,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Cannot merge contact with itself' }, { status: 400 });
     }
 
-    // Verify both contacts exist and are not deleted
+    // Check workspace access (must be EDITOR+)
+    const access = await prisma.workspaceUser.findFirst({
+      where: {
+        workspaceId,
+        userId: session.userId,
+      },
+    });
+
+    if (!access || (access.role !== 'EDITOR' && access.role !== 'ADMIN')) {
+      return NextResponse.json({ error: 'Only editors can merge contacts' }, { status: 403 });
+    }
+
+    // Verify both contacts are in this workspace
     const [fromContact, toContact] = await Promise.all([
       prisma.contact.findFirst({
-        where: { id: fromContactId, deletedAt: null },
+        where: { id: fromContactId, workspaceId, deletedAt: null },
       }),
       prisma.contact.findFirst({
-        where: { id: toContactId, deletedAt: null },
+        where: { id: toContactId, workspaceId, deletedAt: null },
       }),
     ]);
 
@@ -78,7 +90,6 @@ export async function POST(request: Request) {
 
     let mergedTagsCount = 0;
     if (newTags.length > 0) {
-      // Bulk create new tag associations
       await prisma.contactTag.createMany({
         data: newTags.map((t) => ({
           contactId: toContactId,

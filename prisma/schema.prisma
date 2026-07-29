@@ -3,6 +3,8 @@
  *
  * Core models:
  * - User: Internal users who create and manage activities
+ * - Workspace: Organization/team that owns contacts
+ * - WorkspaceUser: Junction table for users in workspaces with roles
  * - Contact: Organizations, government bodies, investors, partners, or customers
  * - Activity: Communication logs (calls, emails, meetings, notes) tied to contacts
  * - Tag: Labels to categorize and filter contacts
@@ -12,20 +14,15 @@
  * Models with deletedAt field use logical deletion (soft-delete).
  * Records are marked as deleted but not removed from the database.
  * All queries must filter WHERE deletedAt IS NULL to exclude deleted records.
- *
- * Indexes: Added on frequently filtered columns (type, deletedAt, contactId, etc.)
- * for better query performance.
- *
- * After schema changes, run: npx prisma migrate dev --name <description>
  */
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 /// User model representing internal Harmelo team members
@@ -42,9 +39,44 @@ model User {
   gmailRefreshToken String?      // Encrypted refresh token
   gmailLastSync     DateTime?    // When we last synced emails
   
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
   
-  activities  Activity[]
+  workspaces   WorkspaceUser[]
+  activities   Activity[]
+}
+
+/// Workspace model representing organizations/teams
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String   /// Workspace name (e.g., "Harmelo Operations")
+  createdAt DateTime @default(now())
+  
+  users     WorkspaceUser[]
+  contacts  Contact[]
+  
+  @@index([createdAt])
+}
+
+/// Role enum for workspace permissions
+enum WorkspaceRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+/// WorkspaceUser junction table for users in workspaces with roles
+model WorkspaceUser {
+  id          String   @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  role        WorkspaceRole @default(VIEWER)
+  createdAt   DateTime  @default(now())
+  
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
 }
 
 /// Contact model representing institutional relationships
@@ -60,6 +92,10 @@ model Contact {
   type         ContactType  @default(OTHER) /// Category: FEDERAL, PROVINCIAL, US, INVESTOR, CUSTOMER, PARTNER, or OTHER
   address      String?      /// Optional; street address
   notes        String?      /// Optional; rich text HTML notes
+  
+  workspace    Workspace?    @relation(fields: [workspaceId], references: [id]) /// Associated workspace
+  workspaceId  String?       /// Foreign key to Workspace
+  
   createdAt    DateTime     @default(now()) /// Auto-set to creation timestamp
   updatedAt    DateTime     @updatedAt      /// Auto-updated on any change
   deletedAt    DateTime?    /// Null for active; set to deletion timestamp for soft-deleted contacts
@@ -68,6 +104,7 @@ model Contact {
 
   @@index([type])
   @@index([organization])
+  @@index([workspaceId])
   @@index([deletedAt])  /// Important for filtering out soft-deleted records
 }
 

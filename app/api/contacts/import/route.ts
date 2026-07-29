@@ -25,13 +25,30 @@ export async function POST(request: Request) {
     // Parse form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const workspaceId = formData.get('workspaceId') as string;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    if (!workspaceId) {
+      return NextResponse.json({ error: 'workspaceId required' }, { status: 400 });
+    }
+
     if (!file.name.endsWith('.csv')) {
       return NextResponse.json({ error: 'File must be CSV' }, { status: 400 });
+    }
+
+    // Check workspace access (must be EDITOR+)
+    const access = await prisma.workspaceUser.findFirst({
+      where: {
+        workspaceId,
+        userId: session.userId,
+      },
+    });
+
+    if (!access || (access.role !== 'EDITOR' && access.role !== 'ADMIN')) {
+      return NextResponse.json({ error: 'Only editors can import contacts' }, { status: 403 });
     }
 
     // Convert file to stream
@@ -71,7 +88,7 @@ export async function POST(request: Request) {
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const rowNumber = i + 2; // +2 because header is row 1
+      const rowNumber = i + 2;
 
       try {
         // Validate required fields
@@ -91,23 +108,21 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Validate email format
         if (!email.includes('@')) {
           errors.push({ row: rowNumber, error: 'Invalid email format' });
           skipCount++;
           continue;
         }
 
-        // Validate type
         if (!allowedTypes.includes(typeStr)) {
           errors.push({ row: rowNumber, error: `Invalid type: ${typeStr}` });
           skipCount++;
           continue;
         }
 
-        // Check if contact already exists
+        // Check if contact already exists in this workspace
         const existing = await prisma.contact.findFirst({
-          where: { email, deletedAt: null },
+          where: { email, workspaceId, deletedAt: null },
         });
 
         if (existing) {
@@ -127,6 +142,7 @@ export async function POST(request: Request) {
             type: typeStr as ContactType,
             address: row.address?.trim() || null,
             notes: row.notes?.trim() || null,
+            workspaceId,
           },
         });
 
