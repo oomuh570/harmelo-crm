@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     // Credentials are correct — create a session
-    await createSession(user.id);
+    await createSession(user.id, user.email);
 
     // Return the user's id (never the password)
     return NextResponse.json({ id: user.id }, { status: 200 });
