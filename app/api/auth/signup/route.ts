@@ -5,39 +5,59 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { fullName, email, phoneNumber, password } = body;
+    const { fullName, email, phoneNumber, password, token } = body;
 
-    // Basic check that required fields are present
-    if (!fullName || !email || !password) {
+    if (!fullName || !email || !password || !token) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Check if a user with this email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    // Validate invitation
+    const invitation = await prisma.userInvitation.findUnique({
+      where: { token },
     });
-
-    if (existingUser) {
+    if (!invitation) {
+      return NextResponse.json({ error: 'Invalid invitation' }, { status: 400 });
+    }
+    if (invitation.acceptedAt) {
+      return NextResponse.json({ error: 'Invitation already used' }, { status: 400 });
+    }
+    if (invitation.expiresAt < new Date()) {
+      return NextResponse.json({ error: 'Invitation expired' }, { status: 400 });
+    }
+    if (invitation.email.toLowerCase() !== String(email).toLowerCase()) {
       return NextResponse.json(
-        { error: 'An account with this email already exists' },
-        { status: 409 }
+        { error: 'Email does not match invitation' },
+        { status: 400 },
       );
     }
 
-    // Hash the password before storing it
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'An account with this email already exists' },
+        { status: 409 },
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the user
-    const user = await prisma.user.create({
-      data: {
-        fullName,
-        email,
-        phoneNumber: phoneNumber || null,
-        password: hashedPassword,
-      },
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          fullName,
+          email,
+          phoneNumber: phoneNumber || null,
+          password: hashedPassword,
+          role: invitation.role,
+        },
+      });
+      await tx.userInvitation.update({
+        where: { id: invitation.id },
+        data: { acceptedAt: new Date() },
+      });
+      return created;
     });
 
-    // Return the new user's id (never return the password)
     return NextResponse.json({ id: user.id }, { status: 201 });
   } catch (error) {
     console.error('Signup error:', error);

@@ -1,4 +1,4 @@
-import Sidebar from "@/components/sidebar";
+import SidebarWrapper from "@/components/sidebar-wrapper";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { mapContact } from "@/app/contacts/contact";
@@ -11,6 +11,9 @@ import ContactsByCategory, {
   type CategoryCount,
 } from "@/app/_dashboard/contacts-by-category";
 import ExportActivitiesButton from "@/app/_dashboard/export-activities-button";
+import MyKpis from "@/app/_dashboard/my-kpis";
+import { getCurrentUser } from "@/lib/auth";
+import { getTeamKpis, thisWeekRange } from "@/lib/kpis";
 
 async function getRecentContacts() {
   const rows = await prisma.contact.findMany({
@@ -32,7 +35,7 @@ async function getThisWeekFollowUps(): Promise<FollowUp[]> {
       deletedAt: null,
       followUpAt: { not: null, lte: endOfWeek },
       followUpStatus: 'PENDING',
-      contact: { deletedAt: null },
+      OR: [{ contactId: null }, { contact: { deletedAt: null } }],
     },
     orderBy: { followUpAt: 'asc' },
     take: 6,
@@ -50,7 +53,7 @@ async function getThisWeekFollowUps(): Promise<FollowUp[]> {
 
 async function getRecentActivity(): Promise<RecentActivity[]> {
   const rows = await prisma.activity.findMany({
-    where: { deletedAt: null, contact: { deletedAt: null } },
+    where: { deletedAt: null, OR: [{ contactId: null }, { contact: { deletedAt: null } }] },
     orderBy: { occurredAt: "desc" },
     take: 5,
     include: { contact: true },
@@ -60,7 +63,7 @@ async function getRecentActivity(): Promise<RecentActivity[]> {
     type: r.type,
     notes: r.notes,
     occurredAt: r.occurredAt,
-    contact: mapContact(r.contact),
+    contact: r.contact ? mapContact(r.contact) : null,
   }));
 }
 
@@ -89,7 +92,7 @@ async function getStats() {
         followUpAt: { not: null },
         followUpStatus: 'PENDING',
         deletedAt: null,
-        contact: { deletedAt: null },
+        OR: [{ contactId: null }, { contact: { deletedAt: null } }],
       },
     }),
     prisma.contact.count({ where: { deletedAt: null } }),
@@ -97,7 +100,7 @@ async function getStats() {
       where: {
         occurredAt: { gte: startOfWeek },
         deletedAt: null,
-        contact: { deletedAt: null },
+        OR: [{ contactId: null }, { contact: { deletedAt: null } }],
       },
     }),
     prisma.activity.count({
@@ -105,7 +108,7 @@ async function getStats() {
         followUpAt: { lt: startOfToday },
         followUpStatus: 'PENDING',
         deletedAt: null,
-        contact: { deletedAt: null },
+        OR: [{ contactId: null }, { contact: { deletedAt: null } }],
       },
     }),
   ]);
@@ -114,13 +117,17 @@ async function getStats() {
 }
 
 export default async function Home() {
-  const [recentContacts, followUps, stats, contactsByCategory, recentActivity] =
+  const currentUser = await getCurrentUser();
+  const [recentContacts, followUps, stats, contactsByCategory, recentActivity, myKpis] =
     await Promise.all([
       getRecentContacts(),
       getThisWeekFollowUps(),
       getStats(),
       getContactsByCategory(),
       getRecentActivity(),
+      currentUser
+        ? getTeamKpis(thisWeekRange(), currentUser.id).then((k) => k.totals)
+        : Promise.resolve(null),
     ]);
 
   const cards = [
@@ -136,12 +143,31 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-[#07090F]">
       <div className="flex">
-        <Sidebar />
+        <SidebarWrapper />
         <div className="flex-1 min-w-0 min-h-screen">
           <div className="mx-auto w-full max-w-6xl px-4 pt-16 md:pt-8 pb-12">
             <h1 className="font-heading text-2xl md:text-3xl text-center text-white mb-6">
               Dashboard
             </h1>
+
+            {myKpis && (
+              <section className="mb-6">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-xs uppercase tracking-wide text-gray-400">
+                    My KPIs (this week)
+                  </h2>
+                  {currentUser?.role === 'ADMIN' && (
+                    <Link
+                      href="/admin"
+                      className="text-xs text-gray-400 hover:text-[#00D4B8]"
+                    >
+                      See team view →
+                    </Link>
+                  )}
+                </div>
+                <MyKpis row={myKpis} />
+              </section>
+            )}
 
             <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
               {cards.map((s) => (

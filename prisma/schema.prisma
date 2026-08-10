@@ -36,15 +36,43 @@ model User {
   email       String   @unique
   password    String
   phoneNumber String?
+  role        UserRole @default(MEMBER)
 
   // Gmail OAuth
   gmailConnected    Boolean?     @default(false)
   gmailRefreshToken String?      // Encrypted refresh token
   gmailLastSync     DateTime?    // When we last synced emails
-  
+
   createdAt   DateTime @default(now())
-  
-  activities  Activity[]
+  deletedAt   DateTime? /// Soft-delete marker for admin-removed members; historical activities are preserved.
+
+  activities        Activity[]
+  invitationsSent   UserInvitation[] @relation("InvitationsSent")
+
+  @@index([role])
+  @@index([deletedAt])
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+/// Pending or accepted invitations sent by an admin to onboard a new team member.
+/// Signup requires a valid, unexpired, unaccepted token that matches the invited email.
+model UserInvitation {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  role        UserRole  @default(MEMBER)
+  invitedById String
+  invitedBy   User      @relation("InvitationsSent", fields: [invitedById], references: [id])
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@index([token])
 }
 
 /// Contact model representing institutional relationships
@@ -94,8 +122,8 @@ model Activity {
   createdAt      DateTime        @default(now())            /// Auto-set to creation timestamp
   updatedAt      DateTime        @updatedAt                 /// Auto-updated on any change
   deletedAt      DateTime?       /// Null for active; set for soft-deleted activities
-  contact        Contact         @relation(fields: [contactId], references: [id]) /// Associated contact
-  contactId      String          /// Foreign key to Contact
+  contact        Contact?        @relation(fields: [contactId], references: [id]) /// Optional; standalone activities have no contact
+  contactId      String?         /// Nullable FK; null means the activity isn't tied to a specific contact
   user           User            @relation(fields: [userId], references: [id])   /// User who created this activity
   userId         String          /// Foreign key to User
   

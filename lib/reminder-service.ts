@@ -1,17 +1,5 @@
-import nodemailer from 'nodemailer';
 import { prisma } from '@/lib/prisma';
-
-/**
- * Email transporter configuration
- * Using Gmail SMTP for sending emails
- */
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASSWORD,
-  },
-});
+import { getMailer, getMailerFromAddress } from '@/lib/mailer';
 
 /**
  * Send reminder emails for upcoming follow-ups
@@ -50,6 +38,13 @@ export async function sendFollowUpReminders() {
       `[Reminder Service] Found ${upcomingFollowUps.length} follow-ups needing reminders`
     );
 
+    const transporter = getMailer();
+    if (!transporter) {
+      console.warn('[Reminder Service] GMAIL_USER/GMAIL_PASSWORD not set; skipping email send.');
+      return;
+    }
+    const fromAddress = getMailerFromAddress();
+
     // Send email for each follow-up
     for (const followUp of upcomingFollowUps) {
       try {
@@ -62,15 +57,15 @@ export async function sendFollowUpReminders() {
 
         // Send email
         await transporter.sendMail({
-          from: process.env.GMAIL_USER,
+          from: fromAddress,
           to: followUp.user.email,
-          subject: `Reminder: Follow-up with ${followUp.contact.name} on ${followUpDate}`,
+          subject: `Reminder: Follow-up with ${(followUp.contact?.name ?? '(no contact)')} on ${followUpDate}`,
           html: `
             <h2>Follow-up Reminder</h2>
             <p>Hi ${followUp.user.fullName},</p>
             <p>This is a reminder that you have a follow-up scheduled:</p>
             <div style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
-              <p><strong>Contact:</strong> ${followUp.contact.name}</p>
+              <p><strong>Contact:</strong> ${(followUp.contact?.name ?? '(no contact)')}</p>
               <p><strong>Date:</strong> ${followUpDate}</p>
               ${followUp.notes ? `<p><strong>Notes:</strong> ${followUp.notes}</p>` : ''}
             </div>
@@ -85,7 +80,7 @@ export async function sendFollowUpReminders() {
           data: { reminderSent: true },
         });
 
-        console.log(`[Reminder Service] Sent reminder for ${followUp.contact.name}`);
+        console.log(`[Reminder Service] Sent reminder for ${(followUp.contact?.name ?? '(no contact)')}`);
       } catch (error) {
         console.error(`[Reminder Service] Failed to send reminder:`, error);
       }

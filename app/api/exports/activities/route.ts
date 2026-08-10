@@ -33,16 +33,16 @@ export async function GET(request: Request) {
       ? followUpStatusParam.split(',').filter((s) => allowedStatuses.includes(s))
       : [];
 
+    // When searching by contact name, we only want activities that have a matching
+    // contact (standalone activities have no name to match, so they're excluded).
+    // Otherwise, include standalone activities and exclude activities on soft-deleted contacts.
+    const contactFilter: Prisma.ActivityWhereInput = search
+      ? { contact: { name: { contains: search, mode: 'insensitive' }, deletedAt: null } }
+      : { OR: [{ contactId: null }, { contact: { deletedAt: null } }] };
+
     const where: Prisma.ActivityWhereInput = {
       deletedAt: null,
-      contact: { deletedAt: null },
-      ...(search
-        ? {
-            contact: {
-              name: { contains: search, mode: 'insensitive' },
-            },
-          }
-        : {}),
+      ...contactFilter,
       ...(typeFilter.length > 0 ? { type: { in: typeFilter as ActivityType[] } } : {}),
       ...(statusFilter.length > 0
         ? { followUpStatus: { in: statusFilter as FollowUpStatus[] } }
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
       ...activities.map((a) => {
         const notesPlain = stripHTML(a.notes);
         return [
-          a.contact.name,
+          a.contact?.name ?? '(no contact)',
           a.type,
           notesPlain,
           a.occurredAt.toISOString(),

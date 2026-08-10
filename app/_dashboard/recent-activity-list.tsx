@@ -12,7 +12,7 @@ export type RecentActivity = {
   type: ActivityType
   notes: string
   occurredAt: Date
-  contact: Contact
+  contact: Contact | null
 }
 
 const icons: Record<ActivityType, React.ComponentType<{ className?: string }>> = {
@@ -75,33 +75,49 @@ export default function RecentActivityList({
       <ul className="flex flex-col gap-2">
         {activities.map((a) => {
           const Icon = icons[a.type]
+          const clickable = a.contact !== null
+          const inner = (
+            <>
+              <Icon className="h-4 w-4 shrink-0 text-gray-400" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={
+                      'truncate text-sm ' + (a.contact ? 'text-white' : 'text-gray-500 italic')
+                    }
+                  >
+                    {a.contact?.name ?? '(no contact)'}
+                  </span>
+                  <span className="shrink-0 rounded bg-gray-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-gray-300">
+                    {labels[a.type]}
+                  </span>
+                </div>
+                {a.notes && (
+                  <div className="truncate text-xs text-gray-400">
+                    {firstLine(a.notes)}
+                  </div>
+                )}
+              </div>
+              <div className="shrink-0 text-xs text-gray-500">
+                {relativeTime(a.occurredAt)}
+              </div>
+            </>
+          )
           return (
             <li key={a.id}>
-              <button
-                type="button"
-                onClick={() => setSelected(a.contact)}
-                className="flex w-full items-center gap-3 rounded-md border border-gray-800 bg-[#07090F] px-3 py-2.5 text-left hover:border-gray-600 cursor-pointer"
-              >
-                <Icon className="h-4 w-4 shrink-0 text-gray-400" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm text-white">
-                      {a.contact.name}
-                    </span>
-                    <span className="shrink-0 rounded bg-gray-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-gray-300">
-                      {labels[a.type]}
-                    </span>
-                  </div>
-                  {a.notes && (
-                    <div className="truncate text-xs text-gray-400">
-                      {firstLine(a.notes)}
-                    </div>
-                  )}
+              {clickable ? (
+                <button
+                  type="button"
+                  onClick={() => setSelected(a.contact)}
+                  className="flex w-full items-center gap-3 rounded-md border border-gray-800 bg-[#07090F] px-3 py-2.5 text-left hover:border-gray-600 cursor-pointer"
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div className="flex w-full items-center gap-3 rounded-md border border-gray-800 bg-[#07090F] px-3 py-2.5">
+                  {inner}
                 </div>
-                <div className="shrink-0 text-xs text-gray-500">
-                  {relativeTime(a.occurredAt)}
-                </div>
-              </button>
+              )}
             </li>
           )
         })}

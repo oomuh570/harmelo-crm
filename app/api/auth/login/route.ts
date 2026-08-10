@@ -18,8 +18,9 @@ export async function POST(request: Request) {
       where: { email },
     });
 
-    // No user with that email
-    if (!user) {
+    // No user with that email, or the account was removed by an admin.
+    // Return the same error either way to avoid leaking which emails exist.
+    if (!user || user.deletedAt) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 

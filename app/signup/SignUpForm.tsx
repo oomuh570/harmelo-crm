@@ -13,7 +13,13 @@ const iconClass = "text-gray-500 absolute left-3 top-1/2 -translate-y-1/2";
 
 
 
-export default function SignupForm() {
+export default function SignupForm({
+    invitationToken,
+    invitationEmail,
+}: {
+    invitationToken: string;
+    invitationEmail: string;
+}) {
     const [passShown, setPassShown] = useState(false);
     const [phone, setPhone] = useState('');
     const [state, action, pending] = useActionState(SignUpAction, undefined)
@@ -35,6 +41,7 @@ export default function SignupForm() {
     return (
 
         <form onSubmit={handleSubmit}>
+            <input type="hidden" name="token" value={invitationToken} />
             <div className="flex flex-col gap-4 py-6">
                 <div className="relative">
                     <FontAwesomeIcon icon={faUser} className={iconClass} />
@@ -66,7 +73,9 @@ export default function SignupForm() {
                         type="email"
                         name="email"
                         placeholder="Email"
-                        className={`${inputBase} pr-3`}
+                        value={invitationEmail}
+                        readOnly
+                        className={`${inputBase} pr-3 opacity-70 cursor-not-allowed`}
                     />
                 </div>
                 {state?.errors?.email && (<p className="text-sm text-red-400">{state?.errors?.email}</p>)}

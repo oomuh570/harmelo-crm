@@ -17,6 +17,11 @@ export default async function SignUpAction(
   state: SignUpState,
   formData: FormData,
 ): Promise<SignUpState> {
+  const token = formData.get('token');
+  if (typeof token !== 'string' || token.length === 0) {
+    return { errors: { email: ['Missing invitation token'] } };
+  }
+
   const validationResult = SignupSchema.safeParse({
     fullName: formData.get('fullName'),
     email: formData.get('email'),
@@ -40,7 +45,7 @@ export default async function SignUpAction(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ fullName, email, phoneNumber, password }),
+      body: JSON.stringify({ fullName, email, phoneNumber, password, token }),
     });
 
     if (!res.ok) {

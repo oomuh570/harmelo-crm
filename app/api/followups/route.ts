@@ -1,23 +1,19 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/session';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
-    // Auth check — same pattern as T29
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    const session = await decrypt(sessionCookie);
-
-    if (!session?.userId || typeof session.userId !== 'string') {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Read optional date-range query params
     const { searchParams } = new URL(request.url);
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
+    const scope = searchParams.get('scope') === 'all' ? 'all' : 'mine';
+    const userIdParam = searchParams.get('userId');
 
     const fromDate = fromParam ? new Date(fromParam) : undefined;
     if (fromDate && isNaN(fromDate.getTime())) {
@@ -29,6 +25,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid to date' }, { status: 400 });
     }
 
+    // Admin-only scopes: scope=all or filtering to a userId other than yourself
+    const wantsPrivileged =
+      scope === 'all' || (userIdParam && userIdParam !== currentUser.id);
+    if (wantsPrivileged && currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Pagination
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
@@ -36,11 +39,16 @@ export async function GET(request: Request) {
     const safeLimit = limit > 0 && limit <= 100 ? limit : 20;
     const skip = (safePage - 1) * safeLimit;
 
-    // Build the where clause
     const where: Record<string, unknown> = {
       followUpStatus: 'PENDING',
       deletedAt: null,
     };
+
+    if (scope === 'mine' && !userIdParam) {
+      where.userId = currentUser.id;
+    } else if (userIdParam) {
+      where.userId = userIdParam;
+    }
 
     if (fromDate || toDate) {
       const followUpAtRange: Record<string, Date> = {};
