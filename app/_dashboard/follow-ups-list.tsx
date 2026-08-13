@@ -10,7 +10,8 @@ export type FollowUp = {
   type: ActivityType;
   notes: string;
   followUpAt: Date;
-  contact: { id: string; name: string };
+  contact: { id: string; name: string } | null;
+  owner?: { id: string; fullName: string };
 };
 
 const icons: Record<ActivityType, React.ComponentType<{ className?: string }>> = {
@@ -57,12 +58,22 @@ function firstLine(s: string) {
   return trimmed.length > 80 ? trimmed.slice(0, 77) + '…' : trimmed;
 }
 
-export default function FollowUpsList({ followUps }: { followUps: FollowUp[] }) {
+export default function FollowUpsList({
+  followUps,
+  showOwner = false,
+  emptyMessage,
+}: {
+  followUps: FollowUp[];
+  showOwner?: boolean;
+  emptyMessage?: string;
+}) {
   const router = useRouter();
 
   if (followUps.length === 0) {
     return (
-      <p className="text-sm text-gray-500">No follow-ups this week — you&apos;re caught up.</p>
+      <p className="text-sm text-gray-500">
+        {emptyMessage ?? "No follow-ups this week — you're caught up."}
+      </p>
     );
   }
 
@@ -96,7 +107,13 @@ export default function FollowUpsList({ followUps }: { followUps: FollowUp[] }) 
             <Icon className="h-4 w-4 shrink-0 text-gray-400" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="truncate text-sm text-white">{f.contact.name}</span>
+                <span
+                  className={
+                    'truncate text-sm ' + (f.contact ? 'text-white' : 'text-gray-500 italic')
+                  }
+                >
+                  {f.contact?.name ?? '(no contact)'}
+                </span>
                 <span
                   className={
                     'shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ' +
@@ -112,6 +129,11 @@ export default function FollowUpsList({ followUps }: { followUps: FollowUp[] }) 
               </div>
               {f.notes && (
                 <div className="truncate text-xs text-gray-400">{firstLine(f.notes)}</div>
+              )}
+              {showOwner && f.owner && (
+                <div className="mt-0.5 truncate text-[11px] text-gray-500">
+                  Assigned to {f.owner.fullName}
+                </div>
               )}
             </div>
             <button

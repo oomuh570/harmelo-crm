@@ -21,7 +21,7 @@
  * Regenerate it after schema changes with: npx prisma generate
  */
 
-import { PrismaClient } from './generated/prisma/client';
+import { PrismaClient } from './generated/prisma';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 // Get PostgreSQL connection string from environment variables

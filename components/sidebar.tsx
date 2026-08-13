@@ -8,21 +8,30 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Settings,
+  Shield,
   Tag,
   Users,
+  UsersRound,
 } from 'lucide-react'
 import { logout } from '@/auth/login-action'
 
-const navItems = [
+const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/team', label: 'Team', icon: UsersRound },
   { href: '/contacts', label: 'Contacts', icon: Users },
   { href: '/activities', label: 'Activities', icon: Activity },
   { href: '/tags', label: 'Tags', icon: Tag },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ role }: { role?: 'ADMIN' | 'MEMBER' }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const navItems =
+    role === 'ADMIN'
+      ? [...baseNavItems, { href: '/admin', label: 'Admin', icon: Shield }]
+      : baseNavItems
 
   function isActive(href: string) {
     if (href === '/') return pathname === '/'

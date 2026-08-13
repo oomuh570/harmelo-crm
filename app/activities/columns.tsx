@@ -15,7 +15,7 @@ export type ActivityRow = {
   occurredAt: string
   followUpAt: string | null
   user: { id: string; fullName: string; email: string } | null
-  contact: { id: string; name: string }
+  contact: { id: string; name: string } | null
 }
 
 const typeIcons: Record<ActivityType, React.ComponentType<{ className?: string }>> = {
@@ -114,7 +114,12 @@ export const columns: ColumnDef<ActivityRow>[] = [
   {
     id: 'contact',
     header: 'Contact',
-    cell: ({ row }) => <ContactNameCell contact={row.original.contact} />,
+    cell: ({ row }) =>
+      row.original.contact ? (
+        <ContactNameCell contact={row.original.contact} />
+      ) : (
+        <span className="text-gray-600">—</span>
+      ),
   },
   {
     id: 'notes',
