@@ -5,16 +5,20 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   Activity,
+  Building2,
   LayoutDashboard,
   LogOut,
   Menu,
-  Settings,
   Shield,
   Tag,
   Users,
   UsersRound,
 } from 'lucide-react'
 import { logout } from '@/auth/login-action'
+import WorkspaceSwitcher, {
+  ACTIVE_WORKSPACE_KEY,
+  type WorkspaceOption,
+} from '@/components/workspace-switcher'
 
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,10 +26,17 @@ const baseNavItems = [
   { href: '/contacts', label: 'Contacts', icon: Users },
   { href: '/activities', label: 'Activities', icon: Activity },
   { href: '/tags', label: 'Tags', icon: Tag },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  // TODO(perms): gate to super admin once role exists. For now visible to everyone.
+  { href: '/super-admin', label: 'Super Admin', icon: Building2 },
 ]
 
-export default function Sidebar({ role }: { role?: 'ADMIN' | 'MEMBER' }) {
+export default function Sidebar({
+  role,
+  workspaces = [],
+}: {
+  role?: 'VIEWER' | 'EDITOR' | 'ADMIN'
+  workspaces?: WorkspaceOption[]
+}) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const navItems =
@@ -80,6 +91,9 @@ export default function Sidebar({ role }: { role?: 'ADMIN' | 'MEMBER' }) {
             </Link>
           </div>
 
+          {/* Workspace switcher */}
+          <WorkspaceSwitcher workspaces={workspaces} />
+
           {/* Nav */}
           <nav className="flex flex-col gap-1 px-3 pt-4">
             {navItems.map(({ href, label, icon: Icon }) => {
@@ -107,7 +121,10 @@ export default function Sidebar({ role }: { role?: 'ADMIN' | 'MEMBER' }) {
           <div className="mt-auto border-t border-gray-800 p-3">
             <button
               type="button"
-              onClick={() => logout()}
+              onClick={() => {
+                window.localStorage.removeItem(ACTIVE_WORKSPACE_KEY)
+                logout()
+              }}
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white cursor-pointer"
             >
               <LogOut className="h-4 w-4" />

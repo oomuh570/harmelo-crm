@@ -4,26 +4,30 @@ import { stubFetch as fetch } from '@/lib/ui-stubs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+type Role = 'VIEWER' | 'EDITOR' | 'ADMIN';
+
 export default function RoleSelect({
   userId,
   currentRole,
   isSelf = false,
 }: {
   userId: string;
-  currentRole: 'ADMIN' | 'MEMBER';
+  currentRole: Role;
   isSelf?: boolean;
 }) {
   const router = useRouter();
-  const [value, setValue] = useState(currentRole);
+  const [value, setValue] = useState<Role>(currentRole);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function change(next: 'ADMIN' | 'MEMBER') {
+  async function change(next: Role) {
     const previous = value;
     setValue(next);
     setSaving(true);
     setError(null);
     try {
+      // TODO(backend): partner's PATCH endpoint is scoped by workspace id.
+      // Wire this to /api/workspaces/[workspaceId]/users/[userId] once active workspace is available.
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -48,12 +52,13 @@ export default function RoleSelect({
     <div className="flex items-center gap-2">
       <select
         value={value}
-        onChange={(e) => change(e.target.value as 'ADMIN' | 'MEMBER')}
+        onChange={(e) => change(e.target.value as Role)}
         disabled={saving || isSelf}
         title={isSelf ? 'Another admin has to change your role.' : undefined}
         className="rounded-md border border-gray-700 bg-[#07090F] px-2 py-1 text-xs text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <option value="MEMBER">Member</option>
+        <option value="VIEWER">Viewer</option>
+        <option value="EDITOR">Editor</option>
         <option value="ADMIN">Admin</option>
       </select>
       {error && <span className="text-xs text-red-400">{error}</span>}

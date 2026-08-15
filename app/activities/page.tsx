@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import ActivitiesTable from './activities-table'
 import type { ActivityRow } from './columns'
 import LogActivityModal from './_components/log-activity-modal'
+import { getCurrentUser, canEdit } from '@/lib/ui-stubs'
 
 const PAGE_SIZE = 20
 
@@ -46,7 +47,11 @@ async function getData() {
 }
 
 export default async function ActivitiesPage() {
-  const { activities, totalPages, contacts } = await getData()
+  const [{ activities, totalPages, contacts }, currentUser] = await Promise.all([
+    getData(),
+    getCurrentUser(),
+  ])
+  const userCanLog = canEdit(currentUser?.role)
   return (
     <div className="min-h-screen bg-[#07090F]">
       <div className="flex">
@@ -57,7 +62,7 @@ export default async function ActivitiesPage() {
           </h1>
           <div className="w-full max-w-5xl px-4">
             <div className="mb-2 flex items-center justify-end gap-2">
-              <LogActivityModal contacts={contacts} />
+              {userCanLog && <LogActivityModal contacts={contacts} />}
               <ExportActivitiesButton />
             </div>
             <ActivitiesTable

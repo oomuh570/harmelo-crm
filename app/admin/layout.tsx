@@ -1,5 +1,6 @@
+import { redirect } from 'next/navigation';
 import SidebarWrapper from '@/components/sidebar-wrapper';
-import { requireAdminPage } from '@/lib/ui-stubs';
+import { getCurrentUser, canManage } from '@/lib/ui-stubs';
 import Link from 'next/link';
 
 const subNav = [
@@ -8,8 +9,12 @@ const subNav = [
   { href: '/admin/invitations', label: 'Invitations' },
 ];
 
+// TODO(backend): role should reflect the user's role in the *active workspace*
+// (via cookie), not a global role. Preview stub always returns ADMIN.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireAdminPage();
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
+  if (!canManage(user.role)) redirect('/');
 
   return (
     <div className="min-h-screen bg-[#07090F]">

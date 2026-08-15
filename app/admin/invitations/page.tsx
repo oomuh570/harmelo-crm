@@ -1,10 +1,11 @@
 import InviteForm from './_components/invite-form';
 import InvitationRowActions from './_components/invitation-row-actions';
+import type { WorkspaceOption } from '@/components/workspace-switcher';
 
 type Invitation = {
   id: string;
   email: string;
-  role: 'ADMIN' | 'MEMBER';
+  role: 'VIEWER' | 'EDITOR' | 'ADMIN';
   createdAt: Date;
   expiresAt: Date;
   acceptedAt: Date | null;
@@ -12,9 +13,18 @@ type Invitation = {
   status: 'accepted' | 'expired' | 'pending';
 };
 
-// TODO(backend): fetch real invitations. Returns empty list so UI renders.
+// TODO(backend): fetch real invitations for the active workspace.
 async function getInvitations(): Promise<Invitation[]> {
   return [];
+}
+
+// TODO(backend): replace with GET /api/workspaces (partner's endpoint).
+// Same placeholder list as the sidebar so the switcher and this form agree.
+async function getMyWorkspaces(): Promise<WorkspaceOption[]> {
+  return [
+    { id: 'preview-sales', name: 'Sales' },
+    { id: 'preview-ops', name: 'Ops' },
+  ];
 }
 
 function fmtDate(d: Date | null) {
@@ -28,14 +38,17 @@ function fmtDate(d: Date | null) {
 }
 
 export default async function InvitationsPage() {
-  const invitations = await getInvitations();
+  const [invitations, workspaces] = await Promise.all([
+    getInvitations(),
+    getMyWorkspaces(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <section>
         <h2 className="mb-3 text-sm font-medium text-white">Invite a new member</h2>
         <div className="rounded-lg border border-gray-700 bg-[#0f1117] p-4">
-          <InviteForm />
+          <InviteForm workspaces={workspaces} />
         </div>
       </section>
 

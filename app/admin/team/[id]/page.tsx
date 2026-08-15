@@ -25,7 +25,7 @@ async function getMember(id: string): Promise<MemberDetail | null> {
     id,
     fullName: 'Preview Member',
     email: 'member@example.com',
-    role: 'MEMBER',
+    role: 'VIEWER',
     phoneNumber: null,
     createdAt: new Date(),
   };

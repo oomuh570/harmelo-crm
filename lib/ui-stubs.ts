@@ -6,7 +6,7 @@
  * Every function is marked TODO(backend) so it's easy to grep.
  */
 
-export type UserRole = 'ADMIN' | 'MEMBER';
+export type UserRole = 'VIEWER' | 'EDITOR' | 'ADMIN';
 
 export type CurrentUser = {
   id: string;
@@ -21,6 +21,16 @@ const PREVIEW_USER: CurrentUser = {
   fullName: 'Preview User',
   role: 'ADMIN',
 };
+
+/** Can this role mutate data in the active workspace? Viewers can't. */
+export function canEdit(role: UserRole | undefined | null): boolean {
+  return role === 'ADMIN' || role === 'EDITOR';
+}
+
+/** Can this role manage workspace members (invite, remove, change role)? Admins only. */
+export function canManage(role: UserRole | undefined | null): boolean {
+  return role === 'ADMIN';
+}
 
 /** TODO(backend): return the current signed-in user or null. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
