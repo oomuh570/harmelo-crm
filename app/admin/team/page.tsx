@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import RoleSelect from './_components/role-select';
 import DeleteMember from './_components/delete-member';
-import { getCurrentUser, type UserRole } from '@/lib/ui-stubs';
+import { getCurrentUser, getTeam, type UserRole } from '@/lib/server-data';
 
 type TeamRow = {
   id: string;
@@ -12,11 +12,6 @@ type TeamRow = {
   createdAt: Date;
   lastActivityAt: Date | null;
 };
-
-// TODO(backend): fetch real team members. Returns empty list so UI renders.
-async function getTeam(): Promise<TeamRow[]> {
-  return [];
-}
 
 function fmtDate(d: Date | null) {
   if (!d) return '—';

@@ -1,6 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
-
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

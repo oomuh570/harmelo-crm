@@ -1,6 +1,7 @@
 import SidebarWrapper from '@/components/sidebar-wrapper';
-import { requireAdminPage } from '@/lib/ui-stubs';
+import { getCurrentUser } from '@/lib/server-data';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 const subNav = [
   { href: '/admin', label: 'Team KPIs' },
@@ -9,7 +10,10 @@ const subNav = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireAdminPage();
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ADMIN') {
+    redirect('/');
+  }
 
   return (
     <div className="min-h-screen bg-[#07090F]">

@@ -79,46 +79,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { contactId, type, notes, workspaceId } = body;
+    // Get user's workspace
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { workspaceId: true },
+    });
 
-    if (!contactId || !type || !workspaceId) {
-      return NextResponse.json(
-        { error: 'contactId, type, and workspaceId required' },
-        { status: 400 }
-      );
+    if (!user?.workspaceId) {
+      return NextResponse.json({ error: 'User has no workspace' }, { status: 400 });
     }
 
-    // Get contact and verify workspace
+    const body = await request.json();
+    const { contactId, type, notes, occurredAt, followUpAt } = body;
+
+    if (!type) {
+      return NextResponse.json({ error: 'Activity type is required' }, { status: 400 });
+    }
+
+    if (!contactId) {
+      return NextResponse.json({ error: 'Contact is required' }, { status: 400 });
+    }
+
+    // Verify contact exists
     const contact = await prisma.contact.findFirst({
       where: { id: contactId, deletedAt: null },
     });
 
-    if (!contact || contact.workspaceId !== workspaceId) {
+    if (!contact) {
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
     }
 
-    // Check workspace access (must be EDITOR+)
-    const access = await prisma.workspaceUser.findFirst({
-      where: {
-        workspaceId,
-        userId: session.userId,
-      },
-    });
-
-    if (!access || (access.role !== 'EDITOR' && access.role !== 'ADMIN')) {
-      return NextResponse.json({ error: 'Only editors can create activities' }, { status: 403 });
+    // Assign contact to workspace if not already assigned
+    if (!contact.workspaceId) {
+      await prisma.contact.update({
+        where: { id: contactId },
+        data: { workspaceId: user.workspaceId },
+      });
     }
 
     const activity = await prisma.activity.create({
       data: {
-        contactId,
+        contactId: contactId || null,
         userId: session.userId,
         type,
         notes: notes || null,
-        occurredAt: body.occurredAt ? new Date(body.occurredAt) : new Date(),
-        followUpAt: body.followUpAt ? new Date(body.followUpAt) : null,
-        followUpStatus: body.followUpStatus || null,
+        occurredAt: occurredAt ? new Date(occurredAt) : new Date(),
+        followUpAt: followUpAt ? new Date(followUpAt) : null,
       },
       include: {
         contact: true,
@@ -126,9 +132,11 @@ export async function POST(request: Request) {
     });
 
     revalidatePath('/contacts');
+    revalidatePath('/activities');
     return NextResponse.json(activity);
   } catch (error) {
     console.error('Create activity error:', error);
-    return NextResponse.json({ error: 'Failed to create activity' }, { status: 500 });
+    const errorMsg = error instanceof Error ? error.message : 'Failed to create activity';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

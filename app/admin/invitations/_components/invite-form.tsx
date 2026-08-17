@@ -1,6 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
-
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -18,7 +16,7 @@ export default function InviteForm() {
     setError(null);
     setInviteLink(null);
     try {
-      const res = await fetch('/api/admin/invitations', {
+      const res = await fetch('/api/admin/invite-employee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role }),

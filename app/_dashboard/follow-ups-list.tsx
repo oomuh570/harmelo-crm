@@ -79,13 +79,13 @@ export default function FollowUpsList({
 
   async function handleMarkDone(id: string) {
     try {
-      const res = await fetch(`/api/activities/${id}`, {
-        method: 'PUT',
+      const res = await fetch(`/api/follow-ups-new/${id}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followUpStatus: 'COMPLETED' }),
+        body: JSON.stringify({ action: 'complete' }),
       });
       if (res.ok) {
-        router.refresh();
+        setTimeout(() => window.location.reload(), 500);
       } else {
         console.error('Failed to mark follow-up done:', res.status);
       }

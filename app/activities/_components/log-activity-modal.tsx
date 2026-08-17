@@ -1,6 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
-
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -118,14 +116,15 @@ export default function LogActivityModal({
 
               <div>
                 <label className="block text-xs uppercase tracking-wide text-gray-400 mb-1">
-                  Contact (optional)
+                  Contact *
                 </label>
                 <select
+                  required
                   value={contactId}
                   onChange={(e) => setContactId(e.target.value)}
                   className="w-full rounded-md border border-gray-700 bg-[#07090F] px-3 py-2 text-sm text-white cursor-pointer"
                 >
-                  <option value="">(no contact)</option>
+                  <option value="">Select a contact...</option>
                   {contacts.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}

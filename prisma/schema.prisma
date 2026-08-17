@@ -28,21 +28,30 @@ datasource db {
 /// User model representing internal Harmelo team members
 /// Users create and manage activities associated with contacts
 model User {
-  id          String   @id @default(cuid())
-  fullName    String
-  email       String   @unique
-  password    String
-  phoneNumber String?
+  id            String    @id @default(cuid())
+  fullName      String
+  email         String    @unique
+  password      String
+  phoneNumber   String?
+  role          String    @default("VIEWER")
+  workspaceId   String?
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id])
+  lastActivityAt DateTime?
 
   // Gmail OAuth
   gmailConnected    Boolean?     @default(false)
   gmailRefreshToken String?      // Encrypted refresh token
   gmailLastSync     DateTime?    // When we last synced emails
-  
+
   createdAt    DateTime @default(now())
-  
+
   workspaces   WorkspaceUser[]
   activities   Activity[]
+  superAdmin   SuperAdmin?
+  invitationsSent Invitation[] @relation("invitedBy")
+  assignedFollowUps FollowUpTask[] @relation("followUpsAssigned")
+  ownedContacts Contact[] @relation("contactOwner")
+  metrics UserMetrics?
 }
 
 /// Workspace model representing organizations/teams
@@ -50,10 +59,14 @@ model Workspace {
   id        String   @id @default(cuid())
   name      String   /// Workspace name (e.g., "Harmelo Operations")
   createdAt DateTime @default(now())
-  
-  users     WorkspaceUser[]
-  contacts  Contact[]
-  
+
+  users         WorkspaceUser[]
+  contacts      Contact[]
+  invitations   Invitation[]
+  ownedByUsers  User[]
+  followUpTasks FollowUpTask[]
+  teamMetrics   TeamMetrics?
+
   @@index([createdAt])
 }
 
@@ -92,19 +105,23 @@ model Contact {
   type         ContactType  @default(OTHER) /// Category: FEDERAL, PROVINCIAL, US, INVESTOR, CUSTOMER, PARTNER, or OTHER
   address      String?      /// Optional; street address
   notes        String?      /// Optional; rich text HTML notes
-  
+
   workspace    Workspace?    @relation(fields: [workspaceId], references: [id]) /// Associated workspace
   workspaceId  String?       /// Foreign key to Workspace
-  
+  owner        User?         @relation("contactOwner", fields: [ownerId], references: [id])
+  ownerId      String?       /// Optional; user who owns this contact
+
   createdAt    DateTime     @default(now()) /// Auto-set to creation timestamp
   updatedAt    DateTime     @updatedAt      /// Auto-updated on any change
   deletedAt    DateTime?    /// Null for active; set to deletion timestamp for soft-deleted contacts
   activities   Activity[]   /// One-to-many: activities related to this contact
   tags         ContactTag[] /// Many-to-many: tags applied to this contact
+  followUpTasks FollowUpTask[]
 
   @@index([type])
   @@index([organization])
   @@index([workspaceId])
+  @@index([ownerId])
   @@index([deletedAt])  /// Important for filtering out soft-deleted records
 }
 
@@ -194,4 +211,71 @@ model ContactTag {
   @@id([contactId, tagId])
   @@index([contactId])  /// For finding all tags for a contact
   @@index([tagId])      /// For finding all contacts with a tag
+}
+
+model SuperAdmin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  email       String
+  role        String    @default("VIEWER")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  invitedBy   User      @relation("invitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedById String
+  acceptedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@index([workspaceId])
+  @@index([expiresAt])
+}
+
+model FollowUpTask {
+  id               String    @id @default(cuid())
+  contactId        String?
+  contact          Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedToUserId String
+  assignedTo       User      @relation("followUpsAssigned", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  dueDate          DateTime
+  status           String    @default("PENDING")
+  notes            String?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  @@index([assignedToUserId])
+  @@index([workspaceId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model UserMetrics {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactsOwned      Int       @default(0)
+  activitiesLogged   Int       @default(0)
+  followUpsCreated   Int       @default(0)
+  followUpsCompleted Int       @default(0)
+  updatedAt          DateTime  @updatedAt
+}
+
+model TeamMetrics {
+  id                 String    @id @default(cuid())
+  workspaceId        String    @unique
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  totalContacts      Int       @default(0)
+  totalActivities    Int       @default(0)
+  totalFollowUps     Int       @default(0)
+  completedFollowUps Int       @default(0)
+  updatedAt          DateTime  @updatedAt
 }

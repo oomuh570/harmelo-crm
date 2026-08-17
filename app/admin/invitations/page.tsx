@@ -1,21 +1,6 @@
 import InviteForm from './_components/invite-form';
 import InvitationRowActions from './_components/invitation-row-actions';
-
-type Invitation = {
-  id: string;
-  email: string;
-  role: 'ADMIN' | 'MEMBER';
-  createdAt: Date;
-  expiresAt: Date;
-  acceptedAt: Date | null;
-  invitedBy: { id: string; fullName: string };
-  status: 'accepted' | 'expired' | 'pending';
-};
-
-// TODO(backend): fetch real invitations. Returns empty list so UI renders.
-async function getInvitations(): Promise<Invitation[]> {
-  return [];
-}
+import { getInvitations } from '@/lib/server-data';
 
 function fmtDate(d: Date | null) {
   if (!d) return '—';

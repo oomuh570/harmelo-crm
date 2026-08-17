@@ -1,9 +1,11 @@
-import { getTeamKpis, presetRange, type UserRole } from '@/lib/ui-stubs';
+import { getTeamKpis, getMemberProfile, getMemberFollowUps, getMemberActivity, type UserRole } from '@/lib/server-data';
+import { presetRange } from '@/lib/ui-stubs';
 import KpiTable from '../../_components/kpi-table';
 import RangePicker from '../../_components/range-picker';
 import FollowUpsList, { type FollowUp } from '@/app/_dashboard/follow-ups-list';
 import RecentActivityList, { type RecentActivity } from '@/app/_dashboard/recent-activity-list';
 import AdminEditProfile from './_components/admin-edit-profile';
+import CreateFollowupForm from './_components/create-followup-form';
 
 type PresetKey = 'today' | 'week' | 'last30';
 function resolvePreset(v: string | undefined): PresetKey {
@@ -19,26 +21,33 @@ type MemberDetail = {
   createdAt: Date;
 };
 
-// TODO(backend): fetch member profile by id (or return null if not found).
 async function getMember(id: string): Promise<MemberDetail | null> {
+  const profile = await getMemberProfile(id);
+  if (!profile) return null;
+
   return {
-    id,
-    fullName: 'Preview Member',
-    email: 'member@example.com',
-    role: 'MEMBER',
-    phoneNumber: null,
-    createdAt: new Date(),
+    id: profile.id,
+    fullName: profile.fullName,
+    email: profile.email,
+    role: (profile.role === 'SUPER_ADMIN' || profile.role === 'ADMIN') ? 'ADMIN' : 'MEMBER',
+    phoneNumber: profile.phoneNumber,
+    createdAt: profile.createdAt,
   };
 }
 
-// TODO(backend): fetch pending follow-ups for this member.
-async function getUserFollowUps(_userId: string): Promise<FollowUp[]> {
-  return [];
+async function getUserFollowUps(userId: string): Promise<FollowUp[]> {
+  return getMemberFollowUps(userId);
 }
 
-// TODO(backend): fetch recent activity for this member.
-async function getUserRecentActivity(_userId: string): Promise<RecentActivity[]> {
-  return [];
+async function getUserRecentActivity(userId: string): Promise<RecentActivity[]> {
+  const activities = await getMemberActivity(userId);
+  return activities.map(a => ({
+    id: a.id,
+    type: a.type,
+    notes: a.notes,
+    occurredAt: a.occurredAt,
+    contact: a.contact,
+  }));
 }
 
 export default async function TeamMemberDetail({
@@ -92,6 +101,13 @@ export default async function TeamMemberDetail({
           <RangePicker current={preset} />
         </div>
         <KpiTable perUser={kpis.perUser} totals={kpis.totals} />
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-medium text-white">Create follow-up</h2>
+        <div className="rounded-lg border border-gray-700 bg-[#0f1117] p-4 mb-6">
+          <CreateFollowupForm userId={id} />
+        </div>
       </section>
 
       <section>

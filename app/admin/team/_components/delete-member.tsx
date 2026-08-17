@@ -1,5 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -26,7 +25,7 @@ export default function DeleteMember({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/team-members/${userId}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) setError(data.error ?? `Failed (${res.status})`);
       else router.refresh();

@@ -23,29 +23,35 @@ async function getRecentContacts() {
   return rows.map(mapContact);
 }
 
-async function getThisWeekFollowUps(): Promise<FollowUp[]> {
-  const now = new Date();
-  const endOfWeek = new Date(now);
-  endOfWeek.setDate(now.getDate() + ((7 - now.getDay()) % 7));
-  endOfWeek.setHours(23, 59, 59, 999);
+async function getThisWeekFollowUps(userId?: string): Promise<FollowUp[]> {
+  if (!userId) return [];
 
-  const rows = await prisma.activity.findMany({
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  const daysSinceMonday = (startOfWeek.getDay() + 6) % 7;
+  startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 7);
+  endOfWeek.setHours(0, 0, 0, -1);
+
+  const rows = await prisma.followUpTask.findMany({
     where: {
-      deletedAt: null,
-      followUpAt: { not: null, lte: endOfWeek },
-      followUpStatus: 'PENDING',
-      contact: { deletedAt: null },
+      assignedToUserId: userId,
+      status: 'PENDING',
+      dueDate: { gte: startOfWeek, lte: endOfWeek },
     },
-    orderBy: { followUpAt: 'asc' },
+    orderBy: { dueDate: 'asc' },
     take: 6,
     include: { contact: { select: { id: true, name: true } } },
   });
 
   return rows.map((r) => ({
     id: r.id,
-    type: r.type,
-    notes: r.notes,
-    followUpAt: r.followUpAt!,
+    type: 'NOTE' as const,
+    notes: r.notes || '',
+    followUpAt: r.dueDate,
     contact: r.contact,
   }));
 }
@@ -120,7 +126,7 @@ export default async function Home() {
   const [recentContacts, followUps, stats, contactsByCategory, recentActivity, myKpis] =
     await Promise.all([
       getRecentContacts(),
-      getThisWeekFollowUps(),
+      currentUser ? getThisWeekFollowUps(currentUser.id) : Promise.resolve([]),
       getStats(),
       getContactsByCategory(),
       getRecentActivity(),

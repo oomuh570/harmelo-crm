@@ -1,4 +1,5 @@
-import { getTeamKpis, presetRange } from '@/lib/ui-stubs';
+import { getTeamKpis, getTeamPendingFollowUps } from '@/lib/server-data';
+import { presetRange } from '@/lib/ui-stubs';
 import KpiTable from './_components/kpi-table';
 import RangePicker from './_components/range-picker';
 import FollowUpsList, { type FollowUp } from '@/app/_dashboard/follow-ups-list';
@@ -7,11 +8,6 @@ type PresetKey = 'today' | 'week' | 'last30';
 
 function resolvePreset(v: string | undefined): PresetKey {
   return v === 'today' || v === 'last30' ? v : 'week';
-}
-
-// TODO(backend): fetch team-wide pending follow-ups with owner names.
-async function getTeamPendingFollowUps(): Promise<FollowUp[]> {
-  return [];
 }
 
 export default async function AdminDashboard({
@@ -25,7 +21,7 @@ export default async function AdminDashboard({
 
   const [kpis, teamFollowUps] = await Promise.all([
     getTeamKpis(range),
-    getTeamPendingFollowUps(),
+    getTeamPendingFollowUps(range),
   ]);
 
   return (

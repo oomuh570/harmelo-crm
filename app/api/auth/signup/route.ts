@@ -27,6 +27,25 @@ export async function POST(request: Request) {
     // Hash the password before storing it
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Check if any SuperAdmin exists
+    const existingSuperAdmin = await prisma.superAdmin.findFirst();
+    const isFirstUser = !existingSuperAdmin;
+
+    let workspace;
+    let userRole = 'VIEWER'; // Default role for new users
+
+    if (isFirstUser) {
+      // First user becomes the master admin
+      userRole = 'SUPER_ADMIN';
+
+      // Create a default workspace for the master admin
+      workspace = await prisma.workspace.create({
+        data: {
+          name: `${fullName}'s Team`,
+        },
+      });
+    }
+
     // Create the user
     const user = await prisma.user.create({
       data: {
@@ -34,6 +53,24 @@ export async function POST(request: Request) {
         email,
         phoneNumber: phoneNumber || null,
         password: hashedPassword,
+        role: userRole,
+        workspaceId: workspace?.id || null,
+      },
+    });
+
+    // If this is the first user, create SuperAdmin entry
+    if (isFirstUser) {
+      await prisma.superAdmin.create({
+        data: {
+          userId: user.id,
+        },
+      });
+    }
+
+    // Create user metrics record
+    await prisma.userMetrics.create({
+      data: {
+        userId: user.id,
       },
     });
 

@@ -98,7 +98,7 @@ export default function RecentActivityList({
                   </div>
                 )}
               </div>
-              <div className="shrink-0 text-xs text-gray-500">
+              <div className="shrink-0 text-xs text-gray-500" suppressHydrationWarning>
                 {relativeTime(a.occurredAt)}
               </div>
             </>

@@ -1,5 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -36,7 +35,7 @@ export default function AdminEditProfile({
     setSaving(true);
     setMessage(null);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/admin/team-members/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fullName, email, phoneNumber: phone || null }),
@@ -49,7 +48,7 @@ export default function AdminEditProfile({
         setMessage({ kind: 'error', text: fieldError ?? `Failed (${res.status})` });
       } else {
         setMessage({ kind: 'success', text: 'Saved.' });
-        router.refresh();
+        setTimeout(() => router.refresh(), 500);
       }
     } catch {
       setMessage({ kind: 'error', text: 'Network error' });

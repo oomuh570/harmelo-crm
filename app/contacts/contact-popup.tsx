@@ -41,7 +41,8 @@ type Activity = {
   user: { id: string; fullName: string; email: string } | null
 }
 
-function formatType(type: string) {
+function formatType(type: string | undefined) {
+  if (!type) return 'Other'
   if (type === 'US') return 'US'
   return type.charAt(0) + type.slice(1).toLowerCase()
 }
@@ -406,7 +407,7 @@ export default function ContactPopup({
       const updated: Activity = await res.json()
       setActivities((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
       cancelEditActivity()
-      router.refresh()
+      setTimeout(() => router.refresh(), 500)
       toast.success('Activity updated')
     } catch {
       setEditError('Failed to save activity')
@@ -469,7 +470,7 @@ export default function ContactPopup({
       if (res.ok) {
         setActivities((prev) => prev.filter((a) => a.id !== confirmDeleteId))
         setConfirmDeleteId(null)
-        router.refresh()
+        setTimeout(() => router.refresh(), 500)
         toast.success('Activity deleted')
       } else {
         const body = await res.json().catch(() => null)
@@ -521,7 +522,7 @@ export default function ContactPopup({
       setActivities((prev) => [created, ...prev].slice(0, 5))
       resetLogForm()
       // refresh server components so the dashboard widgets pick up the new activity
-      router.refresh()
+      setTimeout(() => router.refresh(), 500)
       toast.success('Activity logged')
     } catch {
       setLogError('Failed to save activity')

@@ -1,5 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -24,7 +23,7 @@ export default function RoleSelect({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/admin/team-members/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: next }),
@@ -34,7 +33,7 @@ export default function RoleSelect({
         setError(data.error ?? `Failed (${res.status})`);
         setValue(previous);
       } else {
-        router.refresh();
+        setTimeout(() => router.refresh(), 500);
       }
     } catch {
       setError('Network error');
