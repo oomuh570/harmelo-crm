@@ -66,7 +66,7 @@ export default async function TeamPage() {
           </thead>
           <tbody>
             {team.map((u) => {
-              const canRemove = u.role === 'MEMBER' && u.id !== currentUser?.id;
+              const canRemove = u.id !== currentUser?.id;
               return (
                 <tr key={u.id} className="border-b border-gray-800/60 last:border-0">
                   <td className="px-3 py-2 text-white">

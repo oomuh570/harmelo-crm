@@ -26,12 +26,12 @@ async function getMember(id: string): Promise<MemberDetail | null> {
   if (!profile) return null;
 
   return {
-    id: profile.id,
-    fullName: profile.fullName,
-    email: profile.email,
-    role: (profile.role === 'SUPER_ADMIN' || profile.role === 'ADMIN') ? 'ADMIN' : 'MEMBER',
-    phoneNumber: profile.phoneNumber,
-    createdAt: profile.createdAt,
+    id,
+    fullName: 'Preview Member',
+    email: 'member@example.com',
+    role: 'VIEWER',
+    phoneNumber: null,
+    createdAt: new Date(),
   };
 }
 

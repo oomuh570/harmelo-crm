@@ -2,29 +2,79 @@
  * UI helpers — re-exports and client-safe utilities
  */
 
-// Re-export server-side functions and types for use in server components
-export {
-  getCurrentUser,
-  requireAdminPage,
-  getTeam,
-  getMemberProfile,
-  getMemberFollowUps,
-  getMemberActivity,
-  getTeamPendingFollowUps,
-  getInvitations,
-  getTeamKpis,
-  type UserRole,
-  type CurrentUser,
-  type TeamMember,
-  type MemberProfile,
-  type FollowUp,
-  type Invitation,
-  type KpiRow,
-  type KpiRange,
-} from '@/lib/server-data';
+export type UserRole = 'VIEWER' | 'EDITOR' | 'ADMIN';
 
-// Local type definition for client use
-type KpiRange = { from: Date; to: Date };
+export type CurrentUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+};
+
+const PREVIEW_USER: CurrentUser = {
+  id: 'preview-user',
+  email: 'preview@example.com',
+  fullName: 'Preview User',
+  role: 'ADMIN',
+};
+
+/** Can this role mutate data in the active workspace? Viewers can't. */
+export function canEdit(role: UserRole | undefined | null): boolean {
+  return role === 'ADMIN' || role === 'EDITOR';
+}
+
+/** Can this role manage workspace members (invite, remove, change role)? Admins only. */
+export function canManage(role: UserRole | undefined | null): boolean {
+  return role === 'ADMIN';
+}
+
+/** TODO(backend): return the current signed-in user or null. */
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  return PREVIEW_USER;
+}
+
+/** TODO(backend): redirect non-admin users. Currently a no-op that returns a fake admin. */
+export async function requireAdminPage(): Promise<CurrentUser> {
+  return PREVIEW_USER;
+}
+
+export type KpiRow = {
+  userId: string | null;
+  fullName: string;
+  calls: number;
+  emails: number;
+  meetings: number;
+  notes: number;
+  followUpsPending: number;
+  followUpsOverdue: number;
+  followUpsCompleted: number;
+  contactsTouched: number;
+};
+
+export type KpiRange = { from: Date; to: Date };
+
+function emptyKpiRow(fullName = 'Team totals'): KpiRow {
+  return {
+    userId: null,
+    fullName,
+    calls: 0,
+    emails: 0,
+    meetings: 0,
+    notes: 0,
+    followUpsPending: 0,
+    followUpsOverdue: 0,
+    followUpsCompleted: 0,
+    contactsTouched: 0,
+  };
+}
+
+/** TODO(backend): aggregate real KPIs. Returns empty rows so UI renders. */
+export async function getTeamKpis(
+  _range: KpiRange,
+  _userId?: string,
+): Promise<{ perUser: KpiRow[]; totals: KpiRow }> {
+  return { perUser: [], totals: emptyKpiRow() };
+}
 
 export function thisWeekRange(now: Date = new Date()): KpiRange {
   const startOfWeek = new Date(now);

@@ -17,7 +17,7 @@ export default function DeleteMember({
   async function remove() {
     if (
       !confirm(
-        `Remove ${fullName}? Their historical activity and follow-ups stay in the CRM, but they can no longer log in.`,
+        `Remove ${fullName} from this workspace? Their historical activity stays but they lose access to this workspace's data.`,
       )
     ) {
       return;
@@ -25,7 +25,9 @@ export default function DeleteMember({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/team-members/${userId}`, { method: 'DELETE' });
+      // TODO(backend): partner's endpoint is /api/workspaces/[workspaceId]/users/[userId].
+      // Wire the workspaceId once server-side active-workspace context exists.
+      const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) setError(data.error ?? `Failed (${res.status})`);
       else router.refresh();
