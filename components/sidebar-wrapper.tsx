@@ -1,24 +1,19 @@
 import { redirect } from 'next/navigation';
 import Sidebar from '@/components/sidebar';
 import { getCurrentUser } from '@/lib/ui-stubs';
-import type { WorkspaceOption } from '@/components/workspace-switcher';
 
-// TODO(backend): replace with GET /api/workspaces (partner's endpoint already exists).
-// Placeholder workspaces so the switcher UI is testable end-to-end.
-async function getMyWorkspaces(): Promise<WorkspaceOption[]> {
-  return [
-    { id: 'preview-sales', name: 'Sales' },
-    { id: 'preview-ops', name: 'Ops' },
-  ];
+// TODO(backend): look up the current user's workspace from the DB and pass its name.
+// Each user belongs to exactly one workspace (User.workspaceId). Return null if none.
+async function getMyWorkspaceName(): Promise<string | null> {
+  return 'Preview Workspace';
 }
 
 export default async function SidebarWrapper() {
-  const [user, workspaces] = await Promise.all([
+  const [user, workspaceName] = await Promise.all([
     getCurrentUser(),
-    getMyWorkspaces(),
+    getMyWorkspaceName(),
   ]);
-  // Loop-safe: /no-workspace doesn't render <SidebarWrapper />, so we never redirect to
-  // a page that would render us again.
-  if (user && workspaces.length === 0) redirect('/no-workspace');
-  return <Sidebar role={user?.role} workspaces={workspaces} />;
+  // Loop-safe: /no-workspace doesn't render <SidebarWrapper />.
+  if (user && !workspaceName) redirect('/no-workspace');
+  return <Sidebar role={user?.role} workspaceName={workspaceName} />;
 }

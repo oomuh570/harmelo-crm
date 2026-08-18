@@ -393,7 +393,9 @@ export async function getTeamKpis(
     if (!sessionCookie) return { perUser: [], totals: emptyKpiRow() };
 
     const session = decrypt(sessionCookie);
-    if (!session?.userId) return { perUser: [], totals: emptyKpiRow() };
+    if (!session?.userId || typeof session.userId !== 'string') {
+      return { perUser: [], totals: emptyKpiRow() };
+    }
 
     const currentUser = await prisma.user.findUnique({
       where: { id: session.userId },

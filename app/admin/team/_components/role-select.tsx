@@ -3,7 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-type Role = 'VIEWER' | 'EDITOR' | 'ADMIN';
+// Partner's simplified two-role model for team management (see lib/server-data.ts).
+// Invitation form uses the full VIEWER/EDITOR/ADMIN vocabulary against the schema enum.
+type Role = 'ADMIN' | 'MEMBER';
 
 export default function RoleSelect({
   userId,
@@ -25,8 +27,7 @@ export default function RoleSelect({
     setSaving(true);
     setError(null);
     try {
-      // TODO(backend): partner's PATCH endpoint is scoped by workspace id.
-      // Wire this to /api/workspaces/[workspaceId]/users/[userId] once active workspace is available.
+      // TODO(backend): swap to /api/admin/team-members/[userId] (partner's real endpoint).
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -56,8 +57,7 @@ export default function RoleSelect({
         title={isSelf ? 'Another admin has to change your role.' : undefined}
         className="rounded-md border border-gray-700 bg-[#07090F] px-2 py-1 text-xs text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <option value="VIEWER">Viewer</option>
-        <option value="EDITOR">Editor</option>
+        <option value="MEMBER">Member</option>
         <option value="ADMIN">Admin</option>
       </select>
       {error && <span className="text-xs text-red-400">{error}</span>}

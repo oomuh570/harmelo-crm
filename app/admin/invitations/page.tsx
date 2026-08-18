@@ -1,6 +1,6 @@
 import InviteForm from './_components/invite-form';
 import InvitationRowActions from './_components/invitation-row-actions';
-import type { WorkspaceOption } from '@/components/workspace-switcher';
+import type { WorkspaceOption } from '@/components/workspace-label';
 
 type Invitation = {
   id: string;
@@ -18,13 +18,9 @@ async function getInvitations(): Promise<Invitation[]> {
   return [];
 }
 
-// TODO(backend): replace with GET /api/workspaces (partner's endpoint).
-// Same placeholder list as the sidebar so the switcher and this form agree.
+// TODO(backend): fetch the caller's workspace (each user belongs to exactly one).
 async function getMyWorkspaces(): Promise<WorkspaceOption[]> {
-  return [
-    { id: 'preview-sales', name: 'Sales' },
-    { id: 'preview-ops', name: 'Ops' },
-  ];
+  return [{ id: 'preview-workspace', name: 'Preview Workspace' }];
 }
 
 function fmtDate(d: Date | null) {

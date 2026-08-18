@@ -1,10 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import {
-  ACTIVE_WORKSPACE_KEY,
-  type WorkspaceOption,
-} from '@/components/workspace-switcher';
+import { useState } from 'react';
+import { type WorkspaceOption } from '@/components/workspace-label';
 
 type Role = 'VIEWER' | 'EDITOR' | 'ADMIN';
 
@@ -16,27 +13,17 @@ export default function InviteForm({
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('VIEWER');
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
-  // Resolve active workspace from the sidebar switcher's localStorage entry.
-  useEffect(() => {
-    const stored = window.localStorage.getItem(ACTIVE_WORKSPACE_KEY);
-    if (stored && workspaces.some((w) => w.id === stored)) {
-      setActiveId(stored);
-    } else if (workspaces.length > 0) {
-      setActiveId(workspaces[0].id);
-    }
-  }, [workspaces]);
-
-  const active = workspaces.find((w) => w.id === activeId) ?? null;
+  // Users belong to one workspace, so there's nothing to switch — use the first (and only) one.
+  const active = workspaces[0] ?? null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!activeId) {
-      setError('No active workspace. Pick one from the sidebar switcher first.');
+    if (!active) {
+      setError('You are not in any workspace yet.');
       return;
     }
     setSubmitting(true);
@@ -44,7 +31,7 @@ export default function InviteForm({
     setInviteLink(null);
     try {
       // Hits partner's per-workspace invite endpoint.
-      const res = await fetch(`/api/workspaces/${activeId}/invite`, {
+      const res = await fetch(`/api/workspaces/${active.id}/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role }),
@@ -71,7 +58,7 @@ export default function InviteForm({
         {active ? (
           <span className="font-medium text-white">{active.name}</span>
         ) : (
-          <span className="italic text-gray-500">no active workspace</span>
+          <span className="italic text-gray-500">no workspace</span>
         )}
       </p>
       <div className="flex flex-wrap items-end gap-3">
@@ -104,7 +91,7 @@ export default function InviteForm({
         </div>
         <button
           type="submit"
-          disabled={submitting || !activeId}
+          disabled={submitting || !active}
           className="rounded-md bg-[#00D4B8] px-4 py-2 text-sm font-medium text-black hover:bg-[#00D4B8]/90 disabled:opacity-50 cursor-pointer"
         >
           {submitting ? 'Sending…' : 'Send invite'}

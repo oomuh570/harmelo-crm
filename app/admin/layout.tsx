@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import SidebarWrapper from '@/components/sidebar-wrapper';
 import { getCurrentUser, canManage } from '@/lib/ui-stubs';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 const subNav = [
   { href: '/admin', label: 'Team KPIs' },
