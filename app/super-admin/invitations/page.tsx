@@ -2,6 +2,7 @@ import SuperInviteForm, {
   type WorkspaceOption,
 } from './_components/super-invite-form';
 import InvitationRowActions from '@/app/admin/invitations/_components/invitation-row-actions';
+import { getAllWorkspaces as getServerWorkspaces, getAllInvitations as getServerInvitations } from '@/lib/server-data';
 
 type SuperInvitation = {
   id: string;
@@ -15,14 +16,13 @@ type SuperInvitation = {
   status: 'accepted' | 'expired' | 'pending';
 };
 
-// TODO(backend): list every workspace so super admin can target any of them.
 async function getAllWorkspaces(): Promise<WorkspaceOption[]> {
-  return [];
+  const workspaces = await getServerWorkspaces();
+  return workspaces.map(ws => ({ id: ws.id, name: ws.name }));
 }
 
-// TODO(backend): list every invitation across every workspace.
 async function getAllInvitations(): Promise<SuperInvitation[]> {
-  return [];
+  return getServerInvitations();
 }
 
 function fmtDate(d: Date | null) {
@@ -65,6 +65,7 @@ export default async function SuperAdminInvitationsPage() {
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Workspace</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Role</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Status</th>
+                <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Accepted</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Sent</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Expires</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Invited by</th>
@@ -76,7 +77,7 @@ export default async function SuperAdminInvitationsPage() {
             <tbody>
               {invitations.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={9} className="px-3 py-6 text-center text-sm text-gray-500">
                     No invitations yet.
                   </td>
                 </tr>
@@ -100,6 +101,7 @@ export default async function SuperAdminInvitationsPage() {
                       {inv.status}
                     </span>
                   </td>
+                  <td className="px-3 py-2 text-gray-400">{fmtDate(inv.acceptedAt)}</td>
                   <td className="px-3 py-2 text-gray-400">{fmtDate(inv.createdAt)}</td>
                   <td className="px-3 py-2 text-gray-400">{fmtDate(inv.expiresAt)}</td>
                   <td className="px-3 py-2 text-gray-400">{inv.invitedBy.fullName}</td>

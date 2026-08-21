@@ -12,7 +12,8 @@ import ContactsByCategory, {
 } from "@/app/_dashboard/contacts-by-category";
 import ExportActivitiesButton from "@/app/_dashboard/export-activities-button";
 import MyKpis from "@/app/_dashboard/my-kpis";
-import { getCurrentUser, getTeamKpis, thisWeekRange } from "@/lib/ui-stubs";
+import { getCurrentUser, getTeamKpis } from "@/lib/server-data";
+import { thisWeekRange } from "@/lib/date-ranges";
 
 async function getRecentContacts() {
   const rows = await prisma.contact.findMany({
@@ -216,7 +217,7 @@ export default async function Home() {
                 action={<ExportActivitiesButton compact />}
                 className="lg:col-span-3"
               >
-                <RecentActivityList activities={recentActivity} />
+                <RecentActivityList activities={recentActivity} userRole={currentUser?.role} />
               </Widget>
               <Widget title="Contacts by category" className="lg:col-span-2">
                 <ContactsByCategory counts={contactsByCategory} />

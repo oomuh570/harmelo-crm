@@ -22,6 +22,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
+    // Verify user is SUPER_ADMIN
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { role: true },
+    });
+
+    if (!user || user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Only super admins can create workspaces' },
+        { status: 403 }
+      );
+    }
+
     // Parse request
     const { name } = await request.json();
 
@@ -34,13 +47,18 @@ export async function POST(request: Request) {
       data: { name },
     });
 
-    // Add creator as ADMIN
+    // Add creator as ADMIN and set as their current workspace
     await prisma.workspaceUser.create({
       data: {
         workspaceId: workspace.id,
         userId: session.userId,
         role: 'ADMIN',
       },
+    });
+
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { workspaceId: workspace.id },
     });
 
     return NextResponse.json({

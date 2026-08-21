@@ -1,5 +1,6 @@
 import CreateWorkspaceForm from './_components/create-workspace-form';
 import DeleteWorkspace from './_components/delete-workspace';
+import { getAllWorkspaces as getServerWorkspaces } from '@/lib/server-data';
 
 type WorkspaceRow = {
   id: string;
@@ -9,9 +10,8 @@ type WorkspaceRow = {
   createdAt: Date;
 };
 
-// TODO(backend): list every workspace with member + contact counts.
 async function getAllWorkspaces(): Promise<WorkspaceRow[]> {
-  return [];
+  return getServerWorkspaces();
 }
 
 function fmtDate(d: Date) {

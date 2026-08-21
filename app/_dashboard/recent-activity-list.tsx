@@ -29,8 +29,9 @@ const labels: Record<ActivityType, string> = {
   NOTE: 'Note',
 }
 
-function relativeTime(date: Date) {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
+function relativeTime(date: Date | string) {
+  const d = typeof date === 'string' ? new Date(date) : date
+  const seconds = Math.floor((Date.now() - d.getTime()) / 1000)
   if (seconds < 60) return 'just now'
   const minutes = Math.floor(seconds / 60)
   if (minutes < 60) return `${minutes}m ago`
@@ -61,8 +62,10 @@ function firstLine(s: string) {
 
 export default function RecentActivityList({
   activities,
+  userRole,
 }: {
   activities: RecentActivity[]
+  userRole?: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN'
 }) {
   const [selected, setSelected] = useState<Contact | null>(null)
 
@@ -123,7 +126,7 @@ export default function RecentActivityList({
         })}
       </ul>
       {selected && (
-        <ContactPopup contact={selected} onClose={() => setSelected(null)} />
+        <ContactPopup contact={selected} onClose={() => setSelected(null)} userRole={userRole} />
       )}
     </>
   )

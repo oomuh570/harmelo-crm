@@ -36,7 +36,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Only admins can update employees' }, { status: 403 });
     }
 
-    const { role, fullName, phoneNumber } = await request.json();
+    const { role, fullName, email, phoneNumber } = await request.json();
 
     // Prevent changing own role to non-admin
     if (session.userId === userId && role && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
@@ -51,6 +51,7 @@ export async function PATCH(
       data: {
         ...(role && { role }),
         ...(fullName && { fullName }),
+        ...(email && { email }),
         ...(phoneNumber !== undefined && { phoneNumber }),
       },
     });

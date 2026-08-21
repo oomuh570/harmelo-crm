@@ -15,7 +15,10 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { logout } from '@/auth/login-action'
-import WorkspaceLabel from '@/components/workspace-label'
+import WorkspaceSwitcher, {
+  ACTIVE_WORKSPACE_KEY,
+  type WorkspaceOption,
+} from '@/components/workspace-switcher'
 
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -23,21 +26,21 @@ const baseNavItems = [
   { href: '/contacts', label: 'Contacts', icon: Users },
   { href: '/activities', label: 'Activities', icon: Activity },
   { href: '/tags', label: 'Tags', icon: Tag },
-  // TODO(perms): gate to super admin once role exists. For now visible to everyone.
-  { href: '/super-admin', label: 'Super Admin', icon: Building2 },
 ]
 
 export default function Sidebar({
   role,
-  workspaceName = null,
+  workspaces = [],
 }: {
-  role?: 'VIEWER' | 'EDITOR' | 'ADMIN'
-  workspaceName?: string | null
+  role?: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN'
+  workspaces?: WorkspaceOption[]
 }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const navItems =
-    role === 'ADMIN'
+    role === 'SUPER_ADMIN'
+      ? [...baseNavItems, { href: '/super-admin', label: 'Super Admin', icon: Building2 }, { href: '/admin', label: 'Admin', icon: Shield }]
+      : role === 'ADMIN'
       ? [...baseNavItems, { href: '/admin', label: 'Admin', icon: Shield }]
       : baseNavItems
 
@@ -88,8 +91,8 @@ export default function Sidebar({
             </Link>
           </div>
 
-          {/* Current workspace */}
-          <WorkspaceLabel name={workspaceName} />
+          {/* Workspace switcher */}
+          <WorkspaceSwitcher workspaces={workspaces} />
 
           {/* Nav */}
           <nav className="flex flex-col gap-1 px-3 pt-4">
@@ -118,7 +121,10 @@ export default function Sidebar({
           <div className="mt-auto border-t border-gray-800 p-3">
             <button
               type="button"
-              onClick={() => logout()}
+              onClick={() => {
+                window.localStorage.removeItem(ACTIVE_WORKSPACE_KEY)
+                logout()
+              }}
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white cursor-pointer"
             >
               <LogOut className="h-4 w-4" />

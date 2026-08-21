@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/session';
+import { revalidatePath } from 'next/cache';
 
 /**
  * PATCH /api/follow-ups-new/[id]
@@ -87,6 +88,9 @@ export async function POST(
           completedAt: new Date(),
         },
       });
+
+      revalidatePath('/', 'layout');
+      revalidatePath('/super-admin', 'page');
 
       return NextResponse.json({
         success: true,

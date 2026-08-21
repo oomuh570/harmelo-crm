@@ -1,5 +1,5 @@
 import { getTeamKpis, getTeamPendingFollowUps } from '@/lib/server-data';
-import { presetRange } from '@/lib/ui-stubs';
+import { presetRange } from '@/lib/date-ranges';
 import KpiTable from './_components/kpi-table';
 import RangePicker from './_components/range-picker';
 import FollowUpsList, { type FollowUp } from '@/app/_dashboard/follow-ups-list';

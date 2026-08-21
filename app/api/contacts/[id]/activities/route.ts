@@ -90,14 +90,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Get current user with workspace
+    // Get current user with workspace and role
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { workspaceId: true },
+      select: { workspaceId: true, role: true },
     });
 
     if (!user?.workspaceId) {
       return NextResponse.json({ error: 'User has no workspace' }, { status: 400 });
+    }
+
+    // Only EDITOR and ADMIN can create activities (not VIEWER)
+    if (user.role === 'VIEWER') {
+      return NextResponse.json({ error: 'Viewers cannot log activities' }, { status: 403 });
     }
 
     let contact = await prisma.contact.findFirst({

@@ -1,5 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -25,11 +24,10 @@ export default function DeleteWorkspace({
     setBusy(true);
     setError(null);
     try {
-      // TODO(backend): partner needs to add DELETE /api/workspaces/[id]
       const res = await fetch(`/api/workspaces/${workspaceId}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) setError(data.error ?? `Failed (${res.status})`);
-      else router.refresh();
+      else setTimeout(() => router.refresh(), 500);
     } catch {
       setError('Network error');
     } finally {

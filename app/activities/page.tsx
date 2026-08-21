@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'
 import ActivitiesTable from './activities-table'
 import type { ActivityRow } from './columns'
 import LogActivityModal from './_components/log-activity-modal'
-import { getCurrentUser, canEdit } from '@/lib/ui-stubs'
+import { getCurrentUser } from '@/lib/server-data'
+import { canEdit } from '@/lib/ui-stubs'
 
 const PAGE_SIZE = 20
 

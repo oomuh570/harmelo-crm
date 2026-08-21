@@ -1,4 +1,4 @@
-import type { KpiRow } from '@/lib/ui-stubs';
+import type { KpiRow } from '@/lib/server-data';
 
 const STATS: Array<{ key: keyof KpiRow; label: string }> = [
   { key: 'calls', label: 'Calls' },

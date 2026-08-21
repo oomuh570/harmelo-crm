@@ -70,8 +70,8 @@ export default function InviteSignupForm({
         throw new Error(data.error || 'Failed to create account');
       }
 
-      // Redirect to login
-      router.push('/login');
+      // Redirect to dashboard
+      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {

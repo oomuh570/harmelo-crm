@@ -1,5 +1,7 @@
 import SidebarWrapper from '@/components/sidebar-wrapper';
 import Link from 'next/link';
+import { getCurrentUser } from '@/lib/server-data';
+import { redirect } from 'next/navigation';
 
 const subNav = [
   { href: '/super-admin', label: 'Workspace KPIs' },
@@ -7,8 +9,9 @@ const subNav = [
   { href: '/super-admin/invitations', label: 'Invitations' },
 ];
 
-// TODO(perms): gate to super admin once role exists. Visible to everyone for now.
-export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
+export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'SUPER_ADMIN') redirect('/');
   return (
     <div className="min-h-screen bg-[#07090F]">
       <div className="flex">

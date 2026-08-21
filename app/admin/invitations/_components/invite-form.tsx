@@ -42,7 +42,7 @@ export default function InviteForm({
       } else {
         setEmail('');
         setInviteLink(data.inviteLink ?? null);
-        router.refresh();
+        setTimeout(() => router.refresh(), 500);
       }
     } catch {
       setError('Network error');

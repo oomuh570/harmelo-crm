@@ -2,7 +2,7 @@
  * UI helpers — re-exports and client-safe utilities
  */
 
-export type UserRole = 'VIEWER' | 'EDITOR' | 'ADMIN';
+export type UserRole = 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN';
 
 export type CurrentUser = {
   id: string;
@@ -20,12 +20,12 @@ const PREVIEW_USER: CurrentUser = {
 
 /** Can this role mutate data in the active workspace? Viewers can't. */
 export function canEdit(role: UserRole | undefined | null): boolean {
-  return role === 'ADMIN' || role === 'EDITOR';
+  return role === 'ADMIN' || role === 'EDITOR' || role === 'SUPER_ADMIN';
 }
 
 /** Can this role manage workspace members (invite, remove, change role)? Admins only. */
 export function canManage(role: UserRole | undefined | null): boolean {
-  return role === 'ADMIN';
+  return role === 'ADMIN' || role === 'SUPER_ADMIN';
 }
 
 /** TODO(backend): return the current signed-in user or null. */

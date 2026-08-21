@@ -24,7 +24,7 @@ export default function InvitationRowActions({
       if (!res.ok) setError(data.error ?? `Failed (${res.status})`);
       else {
         setInviteLink(data.inviteLink ?? null);
-        router.refresh();
+        setTimeout(() => router.refresh(), 500);
       }
     } catch {
       setError('Network error');
@@ -41,7 +41,7 @@ export default function InvitationRowActions({
       const res = await fetch(`/api/admin/invitations/${id}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) setError(data.error ?? `Failed (${res.status})`);
-      else router.refresh();
+      else setTimeout(() => router.refresh(), 500);
     } catch {
       setError('Network error');
     } finally {

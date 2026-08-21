@@ -1,5 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -30,7 +29,6 @@ export default function SuperInviteForm({
     setError(null);
     setInviteLink(null);
     try {
-      // TODO(backend): real endpoint. Currently stubbed via stubFetch.
       const res = await fetch('/api/super-admin/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,7 +40,7 @@ export default function SuperInviteForm({
       } else {
         setEmail('');
         setInviteLink(data.inviteLink ?? null);
-        router.refresh();
+        setTimeout(() => router.refresh(), 500);
       }
     } catch {
       setError('Network error');

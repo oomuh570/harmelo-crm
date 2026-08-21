@@ -58,8 +58,8 @@ export default function AddContactForm() {
         setPhone('')
         setNotes('')
         setTagIds([])
-        router.refresh()
         toast.success('Contact added')
+        setTimeout(() => router.refresh(), 500)
         return
       }
 

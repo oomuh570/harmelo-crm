@@ -27,21 +27,23 @@ function startOfDay(d: Date) {
   return x;
 }
 
-function dueLabel(followUpAt: Date) {
+function dueLabel(followUpAt: Date | string) {
+  const date = typeof followUpAt === 'string' ? new Date(followUpAt) : followUpAt;
   const now = new Date();
   const today = startOfDay(now);
-  const dueDay = startOfDay(followUpAt);
+  const dueDay = startOfDay(date);
   const diffDays = Math.round((dueDay.getTime() - today.getTime()) / 86400000);
 
   if (diffDays < 0) return { text: 'Overdue', tone: 'overdue' as const };
   if (diffDays === 0) return { text: 'Today', tone: 'today' as const };
   if (diffDays === 1) return { text: 'Tomorrow', tone: 'normal' as const };
-  const weekday = followUpAt.toLocaleDateString('en-US', { weekday: 'short' });
-  const time = followUpAt.toLocaleTimeString('en-US', {
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+  const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const time = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
-    minute: followUpAt.getMinutes() === 0 ? undefined : '2-digit',
+    minute: date.getMinutes() === 0 ? undefined : '2-digit',
   });
-  return { text: `${weekday} ${time}`, tone: 'normal' as const };
+  return { text: `${weekday} ${monthDay} ${time}`, tone: 'normal' as const };
 }
 
 function firstLine(s: string) {

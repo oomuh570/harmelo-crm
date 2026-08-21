@@ -13,7 +13,7 @@ import {
 import ContactPopup from "@/app/contacts/contact-popup"
 import EditContactForm from "@/app/contacts/edit-contact-form"
 import ConfirmDialog from "@/components/confirm-dialog"
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { Contact } from "./contact"
@@ -26,7 +26,18 @@ function ContactAction({ contact }: { contact: Contact }) {
   const [editModal, setEditModal] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [userRole, setUserRole] = useState<'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN' | undefined>()
   const router = useRouter()
+
+  // Fetch current user's role when component mounts
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.role) setUserRole(data.role)
+      })
+      .catch(() => {})
+  }, [])
 
   function handleDelete() {
     startTransition(async () => {
@@ -35,8 +46,8 @@ function ContactAction({ contact }: { contact: Contact }) {
       const res = await fetch(`/api/contacts/${contact.id}`, { method: 'DELETE' })
       if (res.ok) {
         setConfirmDelete(false)
-        router.refresh()
         toast.success('Contact deleted')
+        setTimeout(() => router.refresh(), 500)
       } else {
         toast.error('Failed to delete contact')
       }
@@ -55,12 +66,16 @@ function ContactAction({ contact }: { contact: Contact }) {
           <DropdownMenuGroup>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem className="cursor-pointer" onClick={() => setModal(true)}>View contact</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer" onClick={() => setEditModal(true)}>Edit contact</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-red-500" onClick={() => setConfirmDelete(true)}>Delete contact</DropdownMenuItem>
+            {userRole !== 'VIEWER' && (
+              <>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setEditModal(true)}>Edit contact</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer text-red-500" onClick={() => setConfirmDelete(true)}>Delete contact</DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {modal && <ContactPopup contact={contact} onClose={() => setModal(false)} />}
+      {modal && <ContactPopup contact={contact} onClose={() => setModal(false)} userRole={userRole} />}
       {editModal && <EditContactForm contact={contact} onClose={() => setEditModal(false)} />}
       {confirmDelete && (
         <ConfirmDialog

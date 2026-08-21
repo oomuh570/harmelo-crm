@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { logout } from '@/auth/login-action';
-import { getCurrentUser } from '@/lib/ui-stubs';
+import { getCurrentUser } from '@/lib/server-data';
 
 // TODO(perms): the "Create workspace" CTA should only show for super admins.
 // TODO(backend): when real workspaces exist, redirect back to `/` if the user has any.

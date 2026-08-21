@@ -131,6 +131,7 @@ type ActivityTimelineProps = {
   onEditFollowUpPresetSelect: (mode: Exclude<FollowUpMode, 'none' | 'custom'>) => void
   onEditCustomFollowUpSelect: () => void
   onEditCustomInputChange: (value: string) => void
+  userRole?: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN'
 }
 
 function ActivityTimeline({
@@ -152,6 +153,7 @@ function ActivityTimeline({
   onEditFollowUpPresetSelect,
   onEditCustomFollowUpSelect,
   onEditCustomInputChange,
+  userRole,
 }: ActivityTimelineProps) {
   return (
     <ol className="relative">
@@ -175,7 +177,7 @@ function ActivityTimeline({
                   {formatShortDate(a.occurredAt)}
                   {a.user && <> · {a.user.fullName}</>}
                 </p>
-                {!isEditing && (
+                {!isEditing && userRole !== 'VIEWER' && (
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button
                       type="button"
@@ -283,9 +285,11 @@ function ActivityTimeline({
 export default function ContactPopup({
   contact,
   onClose,
+  userRole,
 }: {
   contact: Contact
   onClose: () => void
+  userRole?: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN'
 }) {
   const router = useRouter()
   // start from the row data (instant render), then refresh from the server
@@ -586,8 +590,8 @@ export default function ContactPopup({
         ...prev,
         tags: updated.tags,
       }))
-      router.refresh()
       toast.success('Tags updated')
+      setTimeout(() => router.refresh(), 500)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update tags'
       setTagError(message)
@@ -699,7 +703,7 @@ export default function ContactPopup({
             <p className="text-xs uppercase tracking-wide text-gray-500">
               Activity
             </p>
-            {!logOpen && (
+            {!logOpen && userRole !== 'VIEWER' && (
               <button
                 onClick={() => setLogOpen(true)}
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[#00D4B8] hover:bg-[#00D4B8]/10 cursor-pointer"
@@ -805,6 +809,7 @@ export default function ContactPopup({
               onEditFollowUpPresetSelect={selectEditFollowUpPreset}
               onEditCustomFollowUpSelect={selectEditCustomFollowUp}
               onEditCustomInputChange={onEditCustomInputChange}
+              userRole={userRole}
             />
           )}
         </div>

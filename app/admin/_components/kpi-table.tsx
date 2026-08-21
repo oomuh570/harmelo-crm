@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { KpiRow } from '@/lib/ui-stubs';
+import type { KpiRow } from '@/lib/server-data';
 
 const COLS: Array<{ key: keyof KpiRow; label: string }> = [
   { key: 'calls', label: 'Calls' },
@@ -69,20 +69,22 @@ export default function KpiTable({
               })}
             </tr>
           ))}
-          <tr className="bg-[#07090F]">
-            <td className="px-3 py-2 text-white font-medium">{totals.fullName}</td>
-            {COLS.map((c) => {
-              const value = totals[c.key] as number;
-              return (
-                <td
-                  key={c.key as string}
-                  className="px-3 py-2 text-right tabular-nums text-white font-medium"
-                >
-                  {value}
-                </td>
-              );
-            })}
-          </tr>
+          {perUser.length > 1 && (
+            <tr className="bg-[#07090F]">
+              <td className="px-3 py-2 text-white font-medium">{totals.fullName}</td>
+              {COLS.map((c) => {
+                const value = totals[c.key] as number;
+                return (
+                  <td
+                    key={c.key as string}
+                    className="px-3 py-2 text-right tabular-nums text-white font-medium"
+                  >
+                    {value}
+                  </td>
+                );
+              })}
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

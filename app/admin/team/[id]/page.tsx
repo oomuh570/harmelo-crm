@@ -1,5 +1,5 @@
 import { getTeamKpis, getMemberProfile, getMemberFollowUps, getMemberActivity, type UserRole } from '@/lib/server-data';
-import { presetRange } from '@/lib/ui-stubs';
+import { presetRange } from '@/lib/date-ranges';
 import KpiTable from '../../_components/kpi-table';
 import RangePicker from '../../_components/range-picker';
 import FollowUpsList, { type FollowUp } from '@/app/_dashboard/follow-ups-list';
@@ -26,12 +26,12 @@ async function getMember(id: string): Promise<MemberDetail | null> {
   if (!profile) return null;
 
   return {
-    id,
-    fullName: 'Preview Member',
-    email: 'member@example.com',
-    role: 'MEMBER',
-    phoneNumber: null,
-    createdAt: new Date(),
+    id: profile.id,
+    fullName: profile.fullName,
+    email: profile.email,
+    role: (profile.role === 'SUPER_ADMIN' || profile.role === 'ADMIN') ? 'ADMIN' : 'VIEWER',
+    phoneNumber: profile.phoneNumber,
+    createdAt: profile.createdAt,
   };
 }
 

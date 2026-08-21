@@ -1,26 +1,18 @@
 import InviteForm from './_components/invite-form';
 import InvitationRowActions from './_components/invitation-row-actions';
-import type { WorkspaceOption } from '@/components/workspace-label';
+import { getInvitations as getServerInvitations, type Invitation } from '@/lib/server-data';
 
-type Invitation = {
-  id: string;
-  email: string;
-  role: 'VIEWER' | 'EDITOR' | 'ADMIN';
-  createdAt: Date;
-  expiresAt: Date;
-  acceptedAt: Date | null;
-  invitedBy: { id: string; fullName: string };
-  status: 'accepted' | 'expired' | 'pending';
-};
+type WorkspaceOption = { id: string; name: string };
 
-// TODO(backend): fetch real invitations for the active workspace.
 async function getInvitations(): Promise<Invitation[]> {
-  return [];
+  return getServerInvitations();
 }
 
-// TODO(backend): fetch the caller's workspace (each user belongs to exactly one).
 async function getMyWorkspaces(): Promise<WorkspaceOption[]> {
-  return [{ id: 'preview-workspace', name: 'Preview Workspace' }];
+  return [
+    { id: 'preview-sales', name: 'Sales' },
+    { id: 'preview-ops', name: 'Ops' },
+  ];
 }
 
 function fmtDate(d: Date | null) {
@@ -57,6 +49,7 @@ export default async function InvitationsPage() {
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Email</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Role</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Status</th>
+                <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Accepted</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Sent</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Expires</th>
                 <th className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">Invited by</th>
@@ -68,7 +61,7 @@ export default async function InvitationsPage() {
             <tbody>
               {invitations.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="px-3 py-6 text-center text-sm text-gray-500">
                     No invitations yet.
                   </td>
                 </tr>
@@ -91,6 +84,7 @@ export default async function InvitationsPage() {
                       {inv.status}
                     </span>
                   </td>
+                  <td className="px-3 py-2 text-gray-400">{fmtDate(inv.acceptedAt)}</td>
                   <td className="px-3 py-2 text-gray-400">{fmtDate(inv.createdAt)}</td>
                   <td className="px-3 py-2 text-gray-400">{fmtDate(inv.expiresAt)}</td>
                   <td className="px-3 py-2 text-gray-400">{inv.invitedBy.fullName}</td>

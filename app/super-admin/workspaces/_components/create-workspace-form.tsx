@@ -1,5 +1,4 @@
 'use client';
-import { stubFetch as fetch } from '@/lib/ui-stubs';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -35,7 +34,7 @@ export default function CreateWorkspaceForm() {
       } else {
         setName('');
         setMessage(`Created "${trimmed}".`);
-        router.refresh();
+        setTimeout(() => router.refresh(), 500);
       }
     } catch {
       setError('Network error');

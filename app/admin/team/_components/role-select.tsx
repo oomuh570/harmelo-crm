@@ -3,9 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-// Partner's simplified two-role model for team management (see lib/server-data.ts).
-// Invitation form uses the full VIEWER/EDITOR/ADMIN vocabulary against the schema enum.
-type Role = 'ADMIN' | 'MEMBER';
+type Role = 'VIEWER' | 'EDITOR' | 'ADMIN';
 
 export default function RoleSelect({
   userId,
@@ -27,8 +25,7 @@ export default function RoleSelect({
     setSaving(true);
     setError(null);
     try {
-      // TODO(backend): swap to /api/admin/team-members/[userId] (partner's real endpoint).
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/admin/team-members/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: next }),
@@ -38,7 +35,7 @@ export default function RoleSelect({
         setError(data.error ?? `Failed (${res.status})`);
         setValue(previous);
       } else {
-        setTimeout(() => router.refresh(), 500);
+        setTimeout(() => window.location.reload(), 500);
       }
     } catch {
       setError('Network error');
@@ -57,7 +54,8 @@ export default function RoleSelect({
         title={isSelf ? 'Another admin has to change your role.' : undefined}
         className="rounded-md border border-gray-700 bg-[#07090F] px-2 py-1 text-xs text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <option value="MEMBER">Member</option>
+        <option value="VIEWER">Viewer</option>
+        <option value="EDITOR">Editor</option>
         <option value="ADMIN">Admin</option>
       </select>
       {error && <span className="text-xs text-red-400">{error}</span>}

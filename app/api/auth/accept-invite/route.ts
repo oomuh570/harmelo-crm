@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
+import { encrypt } from '@/lib/session';
 
 /**
  * POST /api/auth/accept-invite
@@ -79,6 +81,16 @@ export async function POST(request: Request) {
       data: {
         userId: user.id,
       },
+    });
+
+    // Create session and set cookie
+    const cookieStore = await cookies();
+    const session = encrypt(JSON.stringify({ userId: user.id }));
+    cookieStore.set('session', session, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
     return NextResponse.json({

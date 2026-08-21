@@ -67,7 +67,7 @@ export default function LogActivityModal({
         setError(data.error ?? `Failed (${res.status})`);
       } else {
         close();
-        router.refresh();
+        setTimeout(() => window.location.reload(), 500);
       }
     } catch {
       setError('Network error');

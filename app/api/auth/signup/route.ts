@@ -58,13 +58,24 @@ export async function POST(request: Request) {
       },
     });
 
-    // If this is the first user, create SuperAdmin entry
+    // If this is the first user, create SuperAdmin entry and add to workspace
     if (isFirstUser) {
       await prisma.superAdmin.create({
         data: {
           userId: user.id,
         },
       });
+
+      // Add user to the workspace they should own
+      if (workspace) {
+        await prisma.workspaceUser.create({
+          data: {
+            workspaceId: workspace.id,
+            userId: user.id,
+            role: 'ADMIN',
+          },
+        });
+      }
     }
 
     // Create user metrics record

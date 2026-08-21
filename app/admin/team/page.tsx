@@ -81,7 +81,7 @@ export default async function TeamPage() {
                   <td className="px-3 py-2">
                     <RoleSelect
                       userId={u.id}
-                      currentRole={u.role}
+                      currentRole={(u.role === 'SUPER_ADMIN' || u.role === 'ADMIN') ? 'ADMIN' : u.role as 'VIEWER' | 'EDITOR'}
                       isSelf={u.id === currentUser?.id}
                     />
                   </td>

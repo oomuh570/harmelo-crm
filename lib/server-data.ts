@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { decrypt } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 
-export type UserRole = 'ADMIN' | 'MEMBER';
+export type UserRole = 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN';
 
 export type CurrentUser = {
   id: string;
@@ -59,7 +59,7 @@ export type FollowUp = {
 export type Invitation = {
   id: string;
   email: string;
-  role: 'ADMIN' | 'MEMBER';
+  role: 'VIEWER' | 'EDITOR' | 'ADMIN';
   createdAt: Date;
   expiresAt: Date;
   acceptedAt: Date | null;
@@ -122,7 +122,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
-      role: (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') ? 'ADMIN' : 'MEMBER',
+      role: (user.role as UserRole),
     };
   } catch (error) {
     console.error('Failed to fetch current user:', error);
@@ -174,7 +174,7 @@ export async function getTeam(): Promise<TeamMember[]> {
       fullName: m.fullName,
       email: m.email,
       phoneNumber: m.phoneNumber,
-      role: (m.role === 'SUPER_ADMIN' || m.role === 'ADMIN') ? 'ADMIN' : 'MEMBER',
+      role: (m.role as UserRole),
       createdAt: m.createdAt,
       lastActivityAt: m.lastActivityAt,
     }));
@@ -368,7 +368,7 @@ export async function getInvitations(): Promise<Invitation[]> {
       return {
         id: inv.id,
         email: inv.email,
-        role: inv.role === 'SUPER_ADMIN' || inv.role === 'ADMIN' ? 'ADMIN' : 'MEMBER',
+        role: (inv.role as 'VIEWER' | 'EDITOR' | 'ADMIN'),
         createdAt: inv.createdAt,
         expiresAt: inv.expiresAt,
         acceptedAt: inv.acceptedAt,
@@ -398,7 +398,7 @@ export async function getTeamKpis(
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { id: session.userId },
+      where: { id: session.userId as string },
       select: { workspaceId: true },
     });
 
@@ -406,7 +406,10 @@ export async function getTeamKpis(
 
     // Get team members in workspace
     const teamMembers = await prisma.user.findMany({
-      where: { workspaceId: currentUser.workspaceId },
+      where: {
+        workspaceId: currentUser.workspaceId,
+        ...(userId && { id: userId }),
+      },
       select: { id: true, fullName: true },
     });
 
@@ -528,3 +531,143 @@ export async function getTeamKpis(
     return { perUser: [], totals: emptyKpiRow() };
   }
 }
+
+export async function getAllWorkspaces(): Promise<
+  { id: string; name: string; memberCount: number; contactCount: number; createdAt: Date }[]
+> {
+  try {
+    const workspaces = await prisma.workspace.findMany({
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        users: { select: { id: true } },
+        contacts: { where: { deletedAt: null }, select: { id: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return workspaces.map((ws) => ({
+      id: ws.id,
+      name: ws.name,
+      memberCount: ws.users.length,
+      contactCount: ws.contacts.length,
+      createdAt: ws.createdAt,
+    }));
+  } catch (error) {
+    console.error('Failed to fetch workspaces:', error);
+    return [];
+  }
+}
+
+export async function getAllInvitations(): Promise<
+  (Invitation & { workspace: { id: string; name: string } })[]
+> {
+  try {
+    const now = new Date();
+    const invitations = await prisma.invitation.findMany({
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        expiresAt: true,
+        acceptedAt: true,
+        workspace: { select: { id: true, name: true } },
+        invitedBy: { select: { id: true, fullName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return invitations.map((inv) => {
+      let status: 'accepted' | 'expired' | 'pending';
+      if (inv.acceptedAt) {
+        status = 'accepted';
+      } else if (inv.expiresAt < now) {
+        status = 'expired';
+      } else {
+        status = 'pending';
+      }
+
+      return {
+        id: inv.id,
+        email: inv.email,
+        role: inv.role as 'VIEWER' | 'EDITOR' | 'ADMIN',
+        workspace: inv.workspace,
+        createdAt: inv.createdAt,
+        expiresAt: inv.expiresAt,
+        acceptedAt: inv.acceptedAt,
+        invitedBy: inv.invitedBy,
+        status,
+      };
+    });
+  } catch (error) {
+    console.error('Failed to fetch all invitations:', error);
+    return [];
+  }
+}
+
+export async function getAllPendingFollowUps(): Promise<
+  {
+    id: string;
+    notes: string;
+    dueDate: Date;
+    workspace: { id: string; name: string };
+    assignedTo: { id: string; fullName: string };
+    contact: { id: string; name: string } | null;
+  }[]
+> {
+  try {
+    const followUps = await prisma.followUpTask.findMany({
+      where: { status: 'PENDING' },
+      select: {
+        id: true,
+        notes: true,
+        dueDate: true,
+        workspace: { select: { id: true, name: true } },
+        assignedTo: { select: { id: true, fullName: true } },
+        contact: { select: { id: true, name: true } },
+      },
+      orderBy: { dueDate: 'asc' },
+      take: 100,
+    });
+
+    return followUps.map(f => ({
+      ...f,
+      notes: f.notes || '',
+    }));
+  } catch (error) {
+    console.error('Failed to fetch pending follow-ups:', error);
+    return [];
+  }
+}
+
+export async function getMyWorkspaces(): Promise<{ id: string; name: string }[]> {
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) return [];
+
+    const session = decrypt(sessionCookie);
+    if (!session?.userId || typeof session.userId !== 'string') return [];
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { workspaceId: true },
+    });
+
+    if (!user?.workspaceId) return [];
+
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: user.workspaceId },
+      select: { id: true, name: true },
+    });
+
+    return workspace ? [workspace] : [];
+  } catch (error) {
+    console.error('Failed to fetch user workspaces:', error);
+    return [];
+  }
+}
+

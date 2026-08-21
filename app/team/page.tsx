@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import SidebarWrapper from '@/components/sidebar-wrapper';
-import { getCurrentUser, type UserRole } from '@/lib/ui-stubs';
+import { getCurrentUser, type UserRole, getTeam } from '@/lib/server-data';
 
 type TeamMember = {
   id: string;
@@ -10,11 +10,6 @@ type TeamMember = {
   phoneNumber: string | null;
   role: UserRole;
 };
-
-// TODO(backend): fetch the real team directory.
-async function getTeam(): Promise<TeamMember[]> {
-  return [];
-}
 
 export default async function TeamDirectory() {
   const currentUser = await getCurrentUser();
