@@ -104,9 +104,9 @@ export default function EditContactForm({
         body: JSON.stringify({ tagIds }),
       })
 
-      router.refresh()
-      onClose()
       toast.success('Contact updated')
+      onClose()
+      setTimeout(() => router.refresh(), 500)
     } catch {
       setError('Failed to update contact')
     } finally {

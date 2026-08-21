@@ -1,6 +1,7 @@
 import InviteForm from './_components/invite-form';
 import InvitationRowActions from './_components/invitation-row-actions';
-import { getInvitations as getServerInvitations, type Invitation } from '@/lib/server-data';
+import { getInvitations as getServerInvitations, type Invitation, getCurrentUser } from '@/lib/server-data';
+import { prisma } from '@/lib/prisma';
 
 type WorkspaceOption = { id: string; name: string };
 
@@ -9,10 +10,15 @@ async function getInvitations(): Promise<Invitation[]> {
 }
 
 async function getMyWorkspaces(): Promise<WorkspaceOption[]> {
-  return [
-    { id: 'preview-sales', name: 'Sales' },
-    { id: 'preview-ops', name: 'Ops' },
-  ];
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  const workspaces = await prisma.workspaceUser.findMany({
+    where: { userId: user.id },
+    include: { workspace: { select: { id: true, name: true } } },
+  });
+
+  return workspaces.map((wu) => ({ id: wu.workspace.id, name: wu.workspace.name }));
 }
 
 function fmtDate(d: Date | null) {

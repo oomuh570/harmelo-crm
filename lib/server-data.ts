@@ -11,6 +11,7 @@ export type CurrentUser = {
   email: string;
   fullName: string;
   role: UserRole;
+  workspaceId: string | null;
 };
 
 export type TeamMember = {
@@ -123,6 +124,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       email: user.email,
       fullName: user.fullName,
       role: (user.role as UserRole),
+      workspaceId: user.workspaceId,
     };
   } catch (error) {
     console.error('Failed to fetch current user:', error);

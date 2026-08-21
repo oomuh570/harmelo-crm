@@ -44,40 +44,42 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Only admins can invite users' }, { status: 403 });
     }
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Check if user already in workspace
-    const existing = await prisma.workspaceUser.findFirst({
+    // Check if invitation already exists for this email
+    const existingInvite = await prisma.invitation.findFirst({
       where: {
+        email,
         workspaceId,
-        userId: user.id,
       },
     });
 
-    if (existing) {
-      return NextResponse.json({ error: 'User already in workspace' }, { status: 400 });
+    if (existingInvite) {
+      return NextResponse.json({ error: 'Invitation already sent to this email' }, { status: 400 });
     }
 
-    // Invite user (default role: VIEWER)
+    // Create invitation (default role: VIEWER)
     const inviteRole = role || 'VIEWER';
-    const workspaceUser = await prisma.workspaceUser.create({
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // expires in 7 days
+
+    const invitation = await prisma.invitation.create({
       data: {
-        workspaceId,
-        userId: user.id,
+        email,
         role: inviteRole,
+        workspaceId,
+        invitedById: session.userId,
+        expiresAt,
+      },
+      include: {
+        invitedBy: { select: { id: true, fullName: true } },
       },
     });
+
+    const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/invite/${invitation.id}`;
 
     return NextResponse.json({
       success: true,
-      workspaceUser,
+      inviteLink,
+      invitation,
     });
   } catch (error) {
     console.error('Invite user error:', error);

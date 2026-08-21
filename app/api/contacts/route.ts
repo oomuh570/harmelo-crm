@@ -135,7 +135,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, phone, organization, jobTitle, type, address, notes } = body;
+    const { name, email, phone, organization, jobTitle, type, address, notes, tagIds } = body;
 
     // Name is required and cannot be empty or whitespace only
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -167,6 +167,16 @@ export async function POST(request: Request) {
         notes: notes || null,
       },
     });
+
+    // Add tags if provided
+    if (tagIds && Array.isArray(tagIds) && tagIds.length > 0) {
+      await prisma.contactTag.createMany({
+        data: tagIds.map((tagId) => ({
+          contactId: contact.id,
+          tagId,
+        })),
+      });
+    }
 
     revalidatePath('/');
     revalidatePath('/contacts');

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/session';
+import { revalidatePath } from 'next/cache';
 
 /**
  * POST /api/workspaces
@@ -60,6 +61,8 @@ export async function POST(request: Request) {
       where: { id: session.userId },
       data: { workspaceId: workspace.id },
     });
+
+    revalidatePath('/', 'layout');
 
     return NextResponse.json({
       success: true,

@@ -15,10 +15,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { logout } from '@/auth/login-action'
-import WorkspaceSwitcher, {
-  ACTIVE_WORKSPACE_KEY,
-  type WorkspaceOption,
-} from '@/components/workspace-switcher'
+import WorkspaceLabel from '@/components/workspace-label'
 
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,10 +27,10 @@ const baseNavItems = [
 
 export default function Sidebar({
   role,
-  workspaces = [],
+  workspaceName = null,
 }: {
   role?: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN'
-  workspaces?: WorkspaceOption[]
+  workspaceName?: string | null
 }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
@@ -91,8 +88,8 @@ export default function Sidebar({
             </Link>
           </div>
 
-          {/* Workspace switcher */}
-          <WorkspaceSwitcher workspaces={workspaces} />
+          {/* Workspace label */}
+          <WorkspaceLabel name={workspaceName} />
 
           {/* Nav */}
           <nav className="flex flex-col gap-1 px-3 pt-4">
@@ -121,10 +118,7 @@ export default function Sidebar({
           <div className="mt-auto border-t border-gray-800 p-3">
             <button
               type="button"
-              onClick={() => {
-                window.localStorage.removeItem(ACTIVE_WORKSPACE_KEY)
-                logout()
-              }}
+              onClick={() => logout()}
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white cursor-pointer"
             >
               <LogOut className="h-4 w-4" />

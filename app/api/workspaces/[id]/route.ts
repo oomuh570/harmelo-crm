@@ -29,6 +29,7 @@ export async function DELETE(
     }
 
     // Delete all related records first (cascade)
+    // Clear workspace assignment from all users
     await prisma.user.updateMany({
       where: { workspaceId: id },
       data: { workspaceId: null },

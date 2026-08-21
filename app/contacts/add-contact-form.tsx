@@ -45,12 +45,10 @@ export default function AddContactForm() {
     const formData = new FormData(e.currentTarget)
 
     try {
-      // TODO: include `tagIds` in the POST body once the contacts API accepts it
-      // (e.g. body: JSON.stringify({ ...Object.fromEntries(formData), tagIds })).
       const res = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.fromEntries(formData)),
+        body: JSON.stringify({ ...Object.fromEntries(formData), tagIds }),
       })
 
       if (res.ok) {
