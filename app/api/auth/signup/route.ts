@@ -12,6 +12,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Lock down public signup: allow only when no users exist yet (the SUPER_ADMIN
+    // bootstrap case). All other accounts must be created via /api/auth/accept-invite.
+    const existingSuperAdmin = await prisma.superAdmin.findFirst();
+    if (existingSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Signup is invite-only. Ask an admin to send you an invitation.' },
+        { status: 403 }
+      );
+    }
+
     // Check if a user with this email already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -27,9 +37,9 @@ export async function POST(request: Request) {
     // Hash the password before storing it
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Check if any SuperAdmin exists
-    const existingSuperAdmin = await prisma.superAdmin.findFirst();
-    const isFirstUser = !existingSuperAdmin;
+    // We only reach here when no SuperAdmin exists (guarded above), so this is
+    // always the bootstrap case.
+    const isFirstUser = true;
 
     let workspace;
     let userRole = 'VIEWER'; // Default role for new users

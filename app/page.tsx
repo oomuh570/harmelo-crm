@@ -162,7 +162,7 @@ export default async function Home() {
                   <h2 className="text-xs uppercase tracking-wide text-gray-400">
                     My KPIs (this week)
                   </h2>
-                  {currentUser?.role === 'ADMIN' && (
+                  {(currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
                     <Link
                       href="/admin"
                       className="text-xs text-gray-400 hover:text-[#00D4B8]"

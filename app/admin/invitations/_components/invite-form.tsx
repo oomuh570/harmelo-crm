@@ -30,8 +30,9 @@ export default function InviteForm({
     setError(null);
     setInviteLink(null);
     try {
-      // Hits partner's per-workspace invite endpoint.
-      const res = await fetch(`/api/workspaces/${active.id}/invite`, {
+      // Email-invite flow: creates an Invitation row and returns a signup link.
+      // The endpoint reads the requesting admin's own workspace, so we don't pass it.
+      const res = await fetch('/api/admin/invite-employee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role }),

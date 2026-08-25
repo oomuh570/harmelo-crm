@@ -1,7 +1,53 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import nodemailer from 'nodemailer';
 import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/session';
+
+/**
+ * Best-effort invitation email. Uses the Gmail creds set in .env.local
+ * (GMAIL_USER + GMAIL_PASSWORD app password). If they're missing or the send
+ * fails, we log and continue — the caller still receives inviteLink in the
+ * response so the admin can copy/paste it manually.
+ */
+async function sendInvitationEmail(args: {
+  to: string;
+  inviterName: string;
+  workspaceName: string;
+  inviteLink: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_PASSWORD;
+  if (!user || !pass) {
+    console.warn('[invite-employee] GMAIL_USER/GMAIL_PASSWORD not set; skipping email.');
+    return { sent: false, error: 'Email not configured' };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass },
+    });
+
+    await transporter.sendMail({
+      from: user,
+      to: args.to,
+      subject: `${args.inviterName} invited you to ${args.workspaceName} on Harmelo`,
+      html: `
+        <h2>You've been invited to Harmelo</h2>
+        <p>${args.inviterName} added you to <strong>${args.workspaceName}</strong>.</p>
+        <p>Click below to set your password and finish setting up your account:</p>
+        <p><a href="${args.inviteLink}" style="display:inline-block;padding:10px 16px;background:#00D4B8;color:#000;text-decoration:none;border-radius:6px;font-weight:500;">Accept invitation</a></p>
+        <p style="color:#666;font-size:13px;">Or paste this link into your browser: ${args.inviteLink}</p>
+        <p style="color:#666;font-size:13px;">This link expires in 30 days.</p>
+      `,
+    });
+    return { sent: true };
+  } catch (err) {
+    console.error('[invite-employee] Failed to send email:', err);
+    return { sent: false, error: (err as Error).message };
+  }
+}
 
 /**
  * GET /api/admin/invite-employee?list=true
@@ -94,7 +140,7 @@ export async function POST(request: Request) {
     // Check if current user is admin and get their workspace
     const requester = await prisma.user.findUnique({
       where: { id: session.userId },
-      include: { superAdmin: true },
+      include: { superAdmin: true, workspace: true },
     });
 
     if (!requester?.superAdmin && requester?.role !== 'SUPER_ADMIN' && requester?.role !== 'ADMIN') {
@@ -149,14 +195,23 @@ export async function POST(request: Request) {
       },
     });
 
-    // TODO: Send invitation email
-    // For now, return invitation link for manual sharing
-    const inviteLink = `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/invite/${invitation.id}`;
+    const inviteLink = `${process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/invite/${invitation.id}`;
+
+    // Fire the email. If it fails we still return success with the link so the
+    // admin can share it manually.
+    const emailResult = await sendInvitationEmail({
+      to: email,
+      inviterName: requester.fullName,
+      workspaceName: requester.workspace?.name ?? 'the workspace',
+      inviteLink,
+    });
 
     return NextResponse.json({
       success: true,
       invitation,
       inviteLink,
+      emailSent: emailResult.sent,
+      emailError: emailResult.error,
     });
   } catch (error) {
     console.error('Invite employee error:', error);

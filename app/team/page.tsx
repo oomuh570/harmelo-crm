@@ -25,7 +25,7 @@ export default async function TeamDirectory() {
           <div className="mx-auto w-full max-w-4xl px-4 pt-16 md:pt-8 pb-12">
             <div className="mb-6 flex items-center justify-between">
               <h1 className="font-heading text-2xl md:text-3xl text-white">Team</h1>
-              {currentUser.role === 'ADMIN' && (
+              {(currentUser.role === 'ADMIN' || currentUser.role === 'SUPER_ADMIN') && (
                 <Link
                   href="/admin/team"
                   className="text-xs text-gray-400 hover:text-[#00D4B8]"
@@ -66,7 +66,7 @@ export default async function TeamDirectory() {
                         <span
                           className={
                             'rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ' +
-                            (u.role === 'ADMIN'
+                            (u.role === 'ADMIN' || u.role === 'SUPER_ADMIN'
                               ? 'bg-[#00D4B8]/20 text-[#00D4B8]'
                               : 'bg-gray-700 text-gray-300')
                           }
