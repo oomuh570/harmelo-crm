@@ -76,6 +76,15 @@ export async function POST(request: Request) {
       data: { acceptedAt: new Date() },
     });
 
+    // Add user to the workspace
+    await prisma.workspaceUser.create({
+      data: {
+        workspaceId: invitation.workspaceId,
+        userId: user.id,
+        role: invitation.role,
+      },
+    });
+
     // Create user metrics record
     await prisma.userMetrics.create({
       data: {

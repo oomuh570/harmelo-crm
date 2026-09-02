@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Settings,
   Shield,
   Tag,
   Users,
@@ -114,8 +115,21 @@ export default function Sidebar({
             })}
           </nav>
 
-          {/* Logout */}
-          <div className="mt-auto border-t border-gray-800 p-3">
+          {/* Settings & Logout */}
+          <div className="mt-auto border-t border-gray-800 p-3 space-y-1">
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              aria-current={isActive('/settings') ? 'page' : undefined}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                isActive('/settings')
+                  ? 'bg-[#00D4B8]/10 text-[#00D4B8]'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`}
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
             <button
               type="button"
               onClick={() => logout()}

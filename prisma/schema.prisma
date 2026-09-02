@@ -43,6 +43,10 @@ model User {
   gmailRefreshToken String?      // Encrypted refresh token
   gmailLastSync     DateTime?    // When we last synced emails
 
+  // Password reset
+  resetToken        String?      @unique
+  resetTokenExpiry  DateTime?
+
   createdAt    DateTime @default(now())
 
   workspaces   WorkspaceUser[]
@@ -114,6 +118,7 @@ model Contact {
   createdAt    DateTime     @default(now()) /// Auto-set to creation timestamp
   updatedAt    DateTime     @updatedAt      /// Auto-updated on any change
   deletedAt    DateTime?    /// Null for active; set to deletion timestamp for soft-deleted contacts
+  gmailSyncEnabled Boolean? @default(false) /// Whether to sync emails from Gmail for this contact
   activities   Activity[]   /// One-to-many: activities related to this contact
   tags         ContactTag[] /// Many-to-many: tags applied to this contact
   followUpTasks FollowUpTask[]
@@ -250,6 +255,7 @@ model FollowUpTask {
   notes            String?
   createdAt        DateTime  @default(now())
   completedAt      DateTime?
+  reminderSentAt   DateTime?
   updatedAt        DateTime  @updatedAt
 
   @@index([assignedToUserId])

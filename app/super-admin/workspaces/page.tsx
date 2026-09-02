@@ -1,5 +1,6 @@
 import CreateWorkspaceForm from './_components/create-workspace-form';
 import DeleteWorkspace from './_components/delete-workspace';
+import EnterWorkspace from './_components/enter-workspace';
 import { getAllWorkspaces as getServerWorkspaces } from '@/lib/server-data';
 
 type WorkspaceRow = {
@@ -75,7 +76,8 @@ export default async function WorkspacesPage() {
                     {w.contactCount}
                   </td>
                   <td className="px-3 py-2 text-gray-400">{fmtDate(w.createdAt)}</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-right flex items-center justify-end gap-2">
+                    <EnterWorkspace workspaceId={w.id} />
                     <DeleteWorkspace workspaceId={w.id} name={w.name} />
                   </td>
                 </tr>

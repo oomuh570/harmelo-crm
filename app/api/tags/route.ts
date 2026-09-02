@@ -10,7 +10,9 @@
 
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { decrypt } from '@/lib/session';
 
 /**
  * GET /api/tags
@@ -21,11 +23,34 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const session = decrypt(sessionCookie);
+    if (!session?.userId || typeof session.userId !== 'string') {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { workspaceId: true },
+    });
+
+    if (!user?.workspaceId) {
+      return NextResponse.json({ error: 'No workspace found' }, { status: 403 });
+    }
+
     const tags = await prisma.tag.findMany({
       where: { deletedAt: null },
       include: {
         contacts: {
-          where: { contact: { deletedAt: null } },
+          where: {
+            contact: { deletedAt: null, workspaceId: user.workspaceId },
+          },
           select: { contactId: true },
         },
       },
@@ -56,6 +81,18 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const session = decrypt(sessionCookie);
+    if (!session?.userId || typeof session.userId !== 'string') {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { name, color } = body;
 

@@ -17,6 +17,8 @@ import {
   Pencil,
   Trash2,
   X,
+  Wifi,
+  WifiOff,
 } from 'lucide-react'
 import type { Contact } from './columns'
 import { mapContact } from './contact'
@@ -38,6 +40,7 @@ type Activity = {
   notes: string
   occurredAt: string
   followUpAt: string | null
+  isAutoLogged?: boolean
   user: { id: string; fullName: string; email: string } | null
 }
 
@@ -171,12 +174,19 @@ function ActivityTimeline({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-xs text-gray-500">
-                  <span className="text-gray-300">{activityLabel(a.type)}</span>
-                  {' · '}
-                  {formatShortDate(a.occurredAt)}
-                  {a.user && <> · {a.user.fullName}</>}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-gray-500">
+                    <span className="text-gray-300">{activityLabel(a.type)}</span>
+                    {' · '}
+                    {formatShortDate(a.occurredAt)}
+                    {a.user && <> · {a.user.fullName}</>}
+                  </p>
+                  {a.isAutoLogged && (
+                    <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-[#00D4B8]/20 text-[#00D4B8]">
+                      Gmail
+                    </span>
+                  )}
+                </div>
                 {!isEditing && userRole !== 'VIEWER' && (
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button
@@ -293,7 +303,10 @@ export default function ContactPopup({
 }) {
   const router = useRouter()
   // start from the row data (instant render), then refresh from the server
-  const [data, setData] = useState<Contact>(contact)
+  const [data, setData] = useState<Contact>({
+    ...contact,
+    gmailSyncEnabled: contact.gmailSyncEnabled ?? true,
+  })
   const [loading, setLoading] = useState(false)
   const [activities, setActivities] = useState<Activity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)
@@ -321,6 +334,7 @@ export default function ContactPopup({
   )
   const [savingTags, setSavingTags] = useState(false)
   const [tagError, setTagError] = useState<string | null>(null)
+  const [togglingGmailSync, setTogglingGmailSync] = useState(false)
 
   function startEditActivity(a: Activity) {
     setEditingId(a.id)
@@ -601,6 +615,40 @@ export default function ContactPopup({
     }
   }
 
+  async function handleToggleGmailSync() {
+    setTogglingGmailSync(true)
+    const newValue = !data.gmailSyncEnabled
+    console.log('[Gmail Sync] Toggling from', data.gmailSyncEnabled, 'to', newValue)
+    try {
+      const res = await fetch(`/api/contacts/${contact.id}/gmail-sync`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gmailSyncEnabled: newValue }),
+      })
+
+      console.log('[Gmail Sync] Response status:', res.status)
+      const resData = await res.json()
+      console.log('[Gmail Sync] Response data:', resData)
+
+      if (!res.ok) {
+        throw new Error(resData.error || 'Failed to update Gmail sync setting')
+      }
+
+      setData((prev) => ({
+        ...prev,
+        gmailSyncEnabled: newValue,
+      }))
+      const status = newValue ? 'enabled' : 'disabled'
+      toast.success(`Gmail sync ${status}`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update Gmail sync'
+      console.error('[Gmail Sync] Error:', message)
+      toast.error(message)
+    } finally {
+      setTogglingGmailSync(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     setActivitiesLoading(true)
@@ -662,7 +710,25 @@ export default function ContactPopup({
         {/* Body */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
           <Field icon={<Mail className="h-4 w-4" />} label="Email" value={data.email} />
-          <Field icon={<Phone className="h-4 w-4" />} label="Phone" value={data.phone} />
+          <div className="flex items-center justify-between">
+            <Field icon={<Phone className="h-4 w-4" />} label="Phone" value={data.phone} />
+          </div>
+          <button
+            onClick={handleToggleGmailSync}
+            disabled={togglingGmailSync}
+            className={`sm:col-span-2 rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${
+              data.gmailSyncEnabled
+                ? 'bg-[#00D4B8] text-black hover:bg-[#00D4B8]/90'
+                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {data.gmailSyncEnabled ? (
+              <Wifi className="h-4 w-4" />
+            ) : (
+              <WifiOff className="h-4 w-4" />
+            )}
+            {data.gmailSyncEnabled ? 'Gmail Sync On' : 'Gmail Sync Off'}
+          </button>
           <Field
             icon={<Building2 className="h-4 w-4" />}
             label="Organization"

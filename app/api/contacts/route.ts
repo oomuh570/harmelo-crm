@@ -23,8 +23,10 @@
 
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { Prisma, ContactType } from '@/lib/generated/prisma/client';
+import { decrypt } from '@/lib/session';
 
 /**
  * GET /api/contacts
@@ -37,6 +39,27 @@ import { Prisma, ContactType } from '@/lib/generated/prisma/client';
  */
 export async function GET(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const session = decrypt(sessionCookie);
+    if (!session?.userId || typeof session.userId !== 'string') {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { workspaceId: true },
+    });
+
+    if (!user?.workspaceId) {
+      return NextResponse.json({ error: 'No workspace found' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
@@ -64,11 +87,12 @@ export async function GET(request: Request) {
 
     const skip = (safePage - 1) * safeLimit;
 
-    // Build the filter: always exclude soft-deleted; optionally match the search
+    // Build the filter: always exclude soft-deleted; filter by workspace; optionally match the search
     // term against name / email / organization (case-insensitive); optionally
     // filter by contact type (comma-separated list); optionally filter by tags (OR logic).
     const where: Prisma.ContactWhereInput = {
       deletedAt: null,
+      workspaceId: user.workspaceId,
       ...(search
         ? {
             OR: [
@@ -155,6 +179,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid contact type' }, { status: 400 });
     }
 
+    // Get current user's workspace
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const session = decrypt(sessionCookie);
+    if (!session?.userId || typeof session.userId !== 'string') {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { workspaceId: true },
+    });
+
+    if (!user?.workspaceId) {
+      return NextResponse.json({ error: 'No workspace found' }, { status: 403 });
+    }
+
     const contact = await prisma.contact.create({
       data: {
         name: name.trim(),
@@ -165,6 +211,8 @@ export async function POST(request: Request) {
         type: type || 'OTHER',
         address: address || null,
         notes: notes || null,
+        workspaceId: user.workspaceId,
+        gmailSyncEnabled: true,
       },
     });
 

@@ -47,6 +47,13 @@ export default function LoginForm() {
         >
           {pending ? 'Logging In...' : 'Login'}
         </button>
+
+        <a
+          href="/forgot-password"
+          className="text-xs text-[#00D4B8] hover:text-[#00D4B8]/80 text-center"
+        >
+          Forgot your password?
+        </a>
       </div>
     </form>
   );

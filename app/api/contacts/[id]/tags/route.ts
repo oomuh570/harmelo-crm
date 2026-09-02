@@ -11,7 +11,9 @@
 
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { decrypt } from '@/lib/session';
 
 /**
  * POST /api/contacts/[id]/tags
@@ -41,6 +43,28 @@ export async function POST(
       return NextResponse.json({ error: 'Contact id is required' }, { status: 400 });
     }
 
+    // Authenticate user
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const session = decrypt(sessionCookie);
+    if (!session?.userId || typeof session.userId !== 'string') {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { workspaceId: true },
+    });
+
+    if (!user?.workspaceId) {
+      return NextResponse.json({ error: 'No workspace found' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { tagIds } = body;
 
@@ -52,9 +76,9 @@ export async function POST(
       );
     }
 
-    // Verify contact exists and is not soft-deleted
+    // Verify contact exists, is not soft-deleted, and belongs to user's workspace
     const contact = await prisma.contact.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, deletedAt: null, workspaceId: user.workspaceId },
     });
 
     if (!contact) {

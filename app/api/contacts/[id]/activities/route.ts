@@ -63,6 +63,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         occurredAt: true,
         followUpAt: true,
         followUpStatus: true,
+        isAutoLogged: true,
         user: { select: { id: true, fullName: true, email: true } },
       },
     });

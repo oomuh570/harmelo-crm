@@ -28,6 +28,7 @@ export async function GET() {
         email: true,
         fullName: true,
         role: true,
+        workspaceId: true,
       },
     });
 

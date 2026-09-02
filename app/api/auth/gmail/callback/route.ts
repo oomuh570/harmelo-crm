@@ -9,13 +9,15 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
   // Handle errors from Google
   if (error) {
-    return NextResponse.redirect(`http://localhost:3000?error=gmail_auth_failed&details=${error}`);
+    return NextResponse.redirect(`${baseUrl}?error=gmail_auth_failed&details=${error}`);
   }
 
   if (!code) {
-    return NextResponse.redirect('http://localhost:3000?error=no_code');
+    return NextResponse.redirect(`${baseUrl}?error=no_code`);
   }
 
   try {
@@ -38,14 +40,14 @@ export async function GET(request: Request) {
     const sessionCookie = cookieStore.get('session')?.value;
 
     if (!sessionCookie) {
-      return NextResponse.redirect('http://localhost:3000/login?error=not_logged_in');
+      return NextResponse.redirect(`${baseUrl}/login?error=not_logged_in`);
     }
 
-    // Decrypt session to get userId
-    const session = await decrypt(sessionCookie);
+    // Decrypt session to get userId (NOT async)
+    const session = decrypt(sessionCookie);
 
     if (!session?.userId || typeof session.userId !== 'string') {
-      return NextResponse.redirect('http://localhost:3000/login?error=invalid_session');
+      return NextResponse.redirect(`${baseUrl}/login?error=invalid_session`);
     }
 
     // Store refresh token in database (encrypted)
@@ -65,10 +67,10 @@ export async function GET(request: Request) {
       },
     });
 
-    // Redirect to settings with success message
-    return NextResponse.redirect('http://localhost:3000/contacts?gmail=connected');
+    // Redirect back to settings with success message
+    return NextResponse.redirect(`${baseUrl}/settings?gmail=connected`);
   } catch (error) {
     console.error('Gmail callback error:', error);
-    return NextResponse.redirect('http://localhost:3000?error=gmail_callback_failed');
+    return NextResponse.redirect(`${baseUrl}?error=gmail_callback_failed`);
   }
 }

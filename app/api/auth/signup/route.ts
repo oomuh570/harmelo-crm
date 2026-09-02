@@ -54,9 +54,11 @@ export async function POST(request: Request) {
           name: `${fullName}'s Team`,
         },
       });
+      console.log('[signup] Created workspace:', workspace.id);
     }
 
     // Create the user
+    console.log('[signup] Creating user with workspaceId:', workspace?.id);
     const user = await prisma.user.create({
       data: {
         fullName,
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
         workspaceId: workspace?.id || null,
       },
     });
+    console.log('[signup] User created with workspaceId:', user.workspaceId);
 
     // If this is the first user, create SuperAdmin entry and add to workspace
     if (isFirstUser) {

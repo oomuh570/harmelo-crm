@@ -118,17 +118,21 @@ export async function POST(request: Request) {
             email: fromEmail,
             workspaceId,
             deletedAt: null,
+            OR: [{ gmailSyncEnabled: true }, { gmailSyncEnabled: null }],
           },
         });
 
         if (contact) {
+          // Extract email body
+          const body = getEmailBody(fullMessage.data.payload);
+
           // Create activity for this email
           await prisma.activity.create({
             data: {
               contactId: contact.id,
               userId: session.userId,
               type: 'EMAIL',
-              notes: `Email: "${subject}"`,
+              notes: `From: ${from}\nSubject: ${subject}\n\n${body}`,
               occurredAt: new Date(dateStr || Date.now()),
               externalEmailId: message.id,
               isAutoLogged: true,
@@ -165,4 +169,36 @@ export async function POST(request: Request) {
 function extractEmail(emailString: string): string {
   const match = emailString.match(/<([^>]+)>/);
   return match ? match[1] : emailString.trim();
+}
+
+/**
+ * Extract email body from Gmail payload (handles both plain text and HTML)
+ */
+function getEmailBody(payload: any): string {
+  if (!payload) return '';
+
+  // Handle multipart messages
+  if (payload.parts) {
+    for (const part of payload.parts) {
+      // Try to get plain text first
+      if (part.mimeType === 'text/plain' && part.body?.data) {
+        return Buffer.from(part.body.data, 'base64').toString('utf-8');
+      }
+    }
+    // If no plain text, try HTML
+    for (const part of payload.parts) {
+      if (part.mimeType === 'text/html' && part.body?.data) {
+        const html = Buffer.from(part.body.data, 'base64').toString('utf-8');
+        // Strip HTML tags for plain text
+        return html.replace(/<[^>]*>/g, '');
+      }
+    }
+  }
+
+  // Handle simple messages
+  if (payload.body?.data) {
+    return Buffer.from(payload.body.data, 'base64').toString('utf-8');
+  }
+
+  return '';
 }

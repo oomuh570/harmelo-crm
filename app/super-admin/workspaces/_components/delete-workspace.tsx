@@ -27,7 +27,12 @@ export default function DeleteWorkspace({
       const res = await fetch(`/api/workspaces/${workspaceId}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) setError(data.error ?? `Failed (${res.status})`);
-      else setTimeout(() => router.refresh(), 500);
+      else {
+        setTimeout(() => {
+          router.push('/super-admin');
+          router.refresh();
+        }, 500);
+      }
     } catch {
       setError('Network error');
     } finally {

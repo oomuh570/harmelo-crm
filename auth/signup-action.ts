@@ -53,9 +53,10 @@ export default async function SignUpAction(
     const data = await res.json();
     userId = data.id;
   } catch (error) {
-    console.log(error);
+    console.error('Signup error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Something went wrong';
     return {
-      errors: { email: ['Something went wrong'] },
+      errors: { email: [errorMsg] },
     };
   }
 

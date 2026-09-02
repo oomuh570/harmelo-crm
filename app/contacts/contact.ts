@@ -13,6 +13,7 @@ export type Contact = {
   address: string
   notes: string
   createdAt: Date
+  gmailSyncEnabled?: boolean
   tags?: { id: string; name: string; color: string }[]
 }
 
@@ -29,6 +30,7 @@ export type RawContact = {
   address: string | null
   notes: string | null
   createdAt: string | Date
+  gmailSyncEnabled?: boolean | null
   tags?: { id: string; name: string; color: string }[]
 }
 
@@ -54,6 +56,7 @@ export function mapContact(c: RawContact): Contact {
     address: c.address ?? '',
     notes: c.notes ?? '',
     createdAt: new Date(c.createdAt),
+    gmailSyncEnabled: c.gmailSyncEnabled ?? true,
     tags: c.tags,
   }
 }

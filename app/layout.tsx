@@ -5,6 +5,8 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { cn } from "@/lib/utils";
 import { Toaster } from 'sonner';
+import { initializeGmailCron } from '@/lib/gmail-cron';
+import { initializeReminderCron } from '@/lib/cron-scheduler';
 
 config.autoAddCss = false
 
@@ -28,6 +30,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Initialize Gmail auto-sync on server start
+  initializeGmailCron();
+
+  // Initialize reminder scheduler (every 30 minutes)
+  initializeReminderCron();
+
   return (
     <html
       lang="en"
