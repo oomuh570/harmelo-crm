@@ -1,4 +1,3 @@
-
 # Harmelo CRM
 
 Internal web application for tracking institutional relationships, communications, and follow-ups across Harmelo's federal, provincial, U.S., investor, customer, and partner contacts. Built as a single source of truth for daily operational use by Bradley and a small set of internal users.
@@ -15,29 +14,38 @@ Internal web application for tracking institutional relationships, communication
 * Database: PostgreSQL (Supabase)
 * ORM: Prisma 7
 * Auth: JWT in httpOnly cookies
-* External APIs: Google Gmail API, nodemailer
+* Email: nodemailer (SMTP), Gmail App Passwords
+* Scheduling: node-cron (background tasks)
+* External APIs: Google Gmail API
 * Hosting: Vercel (frontend & API)
 
 ---
 
 ## Features & Status
 
-### Core Features 
+### Core Features
 
 * Contact management (create, read, update, delete)
 * Activity logging (calls, emails, meetings, notes)
-* Follow-up tracking with reminders
+* Follow-up tracking with automated reminders (every 30 mins, 1 hour before due)
 * Tag-based contact organization
 * CSV export & bulk import
 * Contact merging/deduplication
 * Soft-delete pattern (no permanent data loss)
 
-### Gmail Integration 
+### Authentication & Security
+
+* JWT authentication in httpOnly cookies
+* Self-service password reset with email verification (1-hour token expiry)
+* Password reset via forgot-password flow
+* Email-based account recovery
+
+### Gmail Integration
 
 * OAuth 2.0 authentication with Google
 * Automatic email sync and activity logging
-* Daily email reminders for follow-ups (9 AM)
 * Encrypted token storage
+* Gmail sync disabled by default (per-contact toggle)
 
 ### Multi-User Workspaces
 
@@ -47,15 +55,12 @@ Internal web application for tracking institutional relationships, communication
 * Permission enforcement on all endpoints
 * Workspace-scoped data isolation
 
-### In Progress 
+### Recently Completed
 
-* Frontend UI for workspace management (Justin)
-* Frontend UI for team collaboration
-
-### Planned 
-
-* Analytics dashboard
-* Advanced reporting
+* Password reset system with email verification
+* Automated follow-up reminders (every 30 minutes)
+* Workspace selection UI for Super Admin
+* UI/UX consistency improvements
 
 ---
 
@@ -81,9 +86,12 @@ npm install
 cp .env.example .env.local
 # Fill in:
 # - DATABASE_URL (PostgreSQL connection string)
+# - DIRECT_URL (direct PostgreSQL URL for migrations)
 # - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (Gmail OAuth)
-# - NEXTAUTH_SECRET (session encryption)
-# - GMAIL_USER, GMAIL_PASSWORD (for reminders)
+# - SESSION_SECRET (session encryption)
+# - EMAIL_HOST, EMAIL_PORT, EMAIL_SECURE, EMAIL_FROM (SMTP for emails)
+# - GMAIL_USER, GMAIL_PASSWORD (Gmail app password for sending emails)
+# - NEXT_PUBLIC_BASE_URL (base URL for email links)
 
 # 4. Run database migrations
 npx prisma migrate dev
@@ -155,7 +163,7 @@ npx prisma migrate dev --name <description>
 
 ## Team
 
-* **Ochihai Omuha** — Backend Lead 
+* **Ochihai Omuha** — Backend Lead
 * **Justin Quan** — Frontend Lead
 * **Bradley** — Founder, primary user, requirements
 
@@ -165,7 +173,67 @@ npx prisma migrate dev --name <description>
 
 See `Harmelo_Operations_Tool_Project_Tracker.xlsx` (shared separately) for the 12-week task breakdown, owners, and priority order.
 
-**Current Status:** Backend complete and deployed. Frontend UI in progress.
+**Current Status:** Core features complete and deployed. Active development on workspace management and analytics.
+
+---
+
+## How To
+
+### Create a Workspace (Super Admin)
+1. Log in as Super Admin
+2. Go to **Super Admin** → **Workspaces**
+3. Enter workspace name and click **Create workspace**
+4. Click **Enter** to access the workspace
+5. Invite team members to the workspace
+
+### Invite Users to a Workspace
+1. Navigate to **Settings** → **Team Management**
+2. Enter user email and select role (ADMIN, EDITOR, VIEWER)
+3. Click **Send Invite**
+4. User receives invitation email with link to accept
+5. Once accepted, user can access the workspace
+
+### Set Up Gmail Integration
+1. Go to **Settings** → **Gmail Integration**
+2. Click **Connect Gmail**
+3. Authorize Harmelo to access your Gmail
+4. Gmail will auto-sync every 10 minutes in the background
+5. Emails are logged as activities for your contacts
+6. Toggle Gmail sync per contact to enable/disable
+
+### Create a Follow-Up
+1. Go to **Contacts** → Select a contact
+2. Click **+ Add Follow-Up**
+3. Set due date/time and add notes
+4. Click **Create**
+5. Reminders will be sent 1 hour before due date (every 30 minutes check)
+
+### Reset Your Password
+1. Go to login page
+2. Click **Forgot your password?**
+3. Enter your email address
+4. Check your email for reset link (valid for 1 hour)
+5. Click link and set your new password
+6. Log in with new password
+
+### Import Contacts from CSV
+1. Go to **Contacts** → Click **Import CSV**
+2. Upload CSV file with columns: name, email, phone, organization, jobTitle, type, address, tags, notes
+3. System validates and shows import summary
+4. Duplicates are skipped automatically
+5. View imported contacts in the contacts list
+
+### Export Contacts
+1. Go to **Contacts** → Click **Export** (top right)
+2. Download CSV file with all contacts
+3. File includes all contact details and tags
+
+### Merge Duplicate Contacts
+1. Go to **Contacts** → Select two contacts
+2. Click **Merge** button
+3. Choose which contact to keep
+4. All activities and tags are merged
+5. Duplicate contact is deleted
 
 ---
 

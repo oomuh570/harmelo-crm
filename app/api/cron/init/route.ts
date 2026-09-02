@@ -1,4 +1,4 @@
-import { initializeCronJobs } from '@/lib/cron-scheduler';
+import { initializeReminderCron } from '@/lib/cron-scheduler';
 import { NextResponse } from 'next/server';
 
 /**
@@ -7,8 +7,8 @@ import { NextResponse } from 'next/server';
  */
 export async function GET() {
   try {
-    initializeCronJobs();
-    return NextResponse.json({ message: 'Cron jobs initialized' });
+    initializeReminderCron();
+    return NextResponse.json({ message: 'Reminder cron job initialized' });
   } catch (error) {
     console.error('Failed to initialize cron jobs:', error);
     return NextResponse.json({ error: 'Failed to initialize cron jobs' }, { status: 500 });
