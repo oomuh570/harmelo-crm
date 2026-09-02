@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 
-let cronJob: cron.ScheduledTask | null = null;
+let cronJob: any = null;
 
 export function initializeReminderCron() {
   if (cronJob) return;
