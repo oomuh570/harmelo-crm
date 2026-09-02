@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       data: {
         workspaceId: invitation.workspaceId,
         userId: user.id,
-        role: invitation.role,
+        role: invitation.role as 'ADMIN' | 'EDITOR' | 'VIEWER',
       },
     });
 
