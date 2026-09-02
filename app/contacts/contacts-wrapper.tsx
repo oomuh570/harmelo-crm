@@ -1,16 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { type Contact } from './contact';
 import ImportContactsButton from './import-contacts-button';
 import MergeContactsDialog from './merge-contacts-dialog';
 import ContactsTable from './contacts-table';
 import AddContactForm from './add-contact-form';
-
-type Contact = {
-  id: string;
-  name: string;
-  email?: string;
-};
 
 export default function ContactsWrapper({
   initialData,
@@ -21,10 +16,10 @@ export default function ContactsWrapper({
   initialTotalPages: number;
   workspaceId: string;
 }) {
-  const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<Array<{ id: string; name: string }>>([]);
   const [showMergeDialog, setShowMergeDialog] = useState(false);
 
-  function handleSelectContacts(contacts: Contact[]) {
+  function handleSelectContacts(contacts: Array<{ id: string; name: string }>) {
     setSelectedContacts(contacts);
     if (contacts.length === 2) {
       setShowMergeDialog(true);
