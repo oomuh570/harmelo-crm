@@ -33,7 +33,7 @@ export default function MergeContactsDialog({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fromContactId: fromContact.id,
+          fromContactId: fromContact!.id,
           toContactId: keepContactId,
           workspaceId,
         }),
@@ -44,7 +44,7 @@ export default function MergeContactsDialog({
         throw new Error(error.error || 'Merge failed');
       }
 
-      toast.success(`Merged ${fromContact.name} into ${selectedContacts.find((c) => c.id === keepContactId)?.name}`);
+      toast.success(`Merged ${fromContact!.name} into ${selectedContacts.find((c) => c.id === keepContactId)?.name}`);
       onMergeComplete();
       window.location.reload();
     } catch (error) {
