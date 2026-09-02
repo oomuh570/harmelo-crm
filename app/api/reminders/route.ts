@@ -39,6 +39,11 @@ export async function GET() {
     let sent = 0;
 
     for (const reminder of pendingReminders) {
+      if (!reminder.contact) {
+        console.log(`[Reminders] Skipping reminder ${reminder.id} - no contact`);
+        continue;
+      }
+
       try {
         const mailOptions = {
           from: process.env.EMAIL_FROM,
