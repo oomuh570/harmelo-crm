@@ -14,8 +14,6 @@ export default function ContactsWrapper({
   initialTotalPages: number;
   workspaceId: string;
 }) {
-  const [showMergeDialog, setShowMergeDialog] = useState(false);
-
   return (
     <>
       <div className="mb-4 flex gap-2">
