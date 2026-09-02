@@ -15,7 +15,9 @@ export async function POST(request: Request) {
     }
 
     const session = decrypt(sessionCookie);
-    if (!session?.userId) {
+    const userId = session?.userId as string | undefined;
+
+    if (!userId) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
@@ -30,7 +32,7 @@ export async function POST(request: Request) {
 
     // Update user's workspace
     await prisma.user.update({
-      where: { id: session.userId },
+      where: { id: userId },
       data: { workspaceId },
     });
 

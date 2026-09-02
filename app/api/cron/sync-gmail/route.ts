@@ -37,8 +37,13 @@ export async function GET(request: Request) {
 
     // Sync for each user
     for (const user of usersToSync) {
+      if (!user.gmailRefreshToken) {
+        console.log(`[Gmail Cron] Skipping user ${user.id} - no refresh token`);
+        continue;
+      }
+
       try {
-        const synced = await syncUserGmail(user.id, user.gmailRefreshToken!);
+        const synced = await syncUserGmail(user.id, user.gmailRefreshToken);
         totalSynced += synced;
         successCount++;
       } catch (error) {

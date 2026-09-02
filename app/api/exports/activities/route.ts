@@ -67,20 +67,22 @@ export async function GET(request: Request) {
       ]
         .map(escapeCSV)
         .join(','),
-      ...activities.map((a) => {
-        const notesPlain = stripHTML(a.notes);
-        return [
-          a.contact.name,
-          a.type,
-          notesPlain,
-          a.occurredAt.toISOString(),
-          a.followUpAt?.toISOString() || '',
-          a.followUpStatus || '',
-          a.createdAt.toISOString(),
-        ]
-          .map(escapeCSV)
-          .join(',');
-      }),
+      ...activities
+        .filter((a) => a.contact)
+        .map((a) => {
+          const notesPlain = stripHTML(a.notes);
+          return [
+            a.contact!.name,
+            a.type,
+            notesPlain,
+            a.occurredAt.toISOString(),
+            a.followUpAt?.toISOString() || '',
+            a.followUpStatus || '',
+            a.createdAt.toISOString(),
+          ]
+            .map(escapeCSV)
+            .join(',');
+        }),
     ].join('\n');
 
     const timestamp = new Date().toISOString().split('T')[0];
