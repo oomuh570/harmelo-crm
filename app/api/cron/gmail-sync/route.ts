@@ -33,6 +33,11 @@ export async function GET() {
         continue;
       }
 
+      if (!user.gmailRefreshToken) {
+        console.log(`[cron-gmail-sync] Skipping user ${user.id} - no refresh token`);
+        continue;
+      }
+
       try {
         const syncCount = await syncUserGmail(user.id, user.gmailRefreshToken, user.workspaceId);
         totalSynced += syncCount;
